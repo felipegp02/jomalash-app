@@ -5,6 +5,7 @@ import CardSkeleton from '../dashboard/CardSkeleton';
 import SinDatos from '../dashboard/SinDatos';
 import CamposInsumo from './CamposInsumo';
 import AjusteInventario from './AjusteInventario';
+import { formatearNumero } from '../../utils/formato';
 
 const NUEVO_VACIO = {
   nombre: '',
@@ -24,19 +25,39 @@ function pluralizar(palabra) {
   return 'aeiouáéíóú'.includes(ultima) ? `${palabra}s` : `${palabra}es`;
 }
 
-// "255 ml disponibles (≈ 1 frasco)": solo aplica a consumibles. Division
-// entera para saber cuantas unidades de compra completas hay; si sobra
-// resto, es un numero aproximado (≈), no exacto.
-function equivalenteEnUnidadCompra(insumo) {
-  if (insumo.tipo !== 'consumible' || !insumo.contenido_por_compra || insumo.contenido_por_compra <= 1) {
-    return null;
+// "gramos" se abrevia a "g" en pantalla (igual que "ml" ya es abreviatura);
+// "unidades" se deja completo, no tiene abreviatura de uso comun.
+function medidaCorta(tipoMedida) {
+  return tipoMedida === 'gramos' ? 'g' : tipoMedida;
+}
+
+// Un consumible "con envase" (se compra en una presentacion distinta a la
+// que se gasta, ej. un frasco de 15ml) muestra como dato principal cuantos
+// envases completos hay, y el total/minimo en la unidad de uso quedan como
+// referencia secundaria. Uno "sin envase" (contenido_por_compra=1, se compra
+// y se gasta igual) mantiene el formato simple de siempre.
+function tieneEnvase(insumo) {
+  return insumo.tipo === 'consumible' && insumo.contenido_por_compra > 1;
+}
+
+function textoStockConsumible(insumo) {
+  const medida = medidaCorta(insumo.tipo_medida);
+
+  if (!tieneEnvase(insumo)) {
+    return `${formatearNumero(insumo.stock_actual)} ${medida} disponibles · minimo ${formatearNumero(
+      insumo.stock_minimo,
+    )} ${medida}`;
   }
 
-  const cantidad = Math.floor(insumo.stock_actual / insumo.contenido_por_compra);
-  const exacto = insumo.stock_actual % insumo.contenido_por_compra === 0;
-  const unidad = cantidad === 1 ? insumo.unidad_compra : pluralizar(insumo.unidad_compra);
+  const cantidadEnvases = Math.floor(insumo.stock_actual / insumo.contenido_por_compra);
+  const envasesEtiqueta = cantidadEnvases === 1 ? insumo.unidad_compra : pluralizar(insumo.unidad_compra);
 
-  return `${exacto ? '' : '≈ '}${cantidad} ${unidad}`;
+  return (
+    `${formatearNumero(cantidadEnvases)} ${envasesEtiqueta} disponibles ` +
+    `(${formatearNumero(insumo.contenido_por_compra)} ${medida} por ${insumo.unidad_compra}) · ` +
+    `Total: ${formatearNumero(insumo.stock_actual)} ${medida} · ` +
+    `Mínimo: ${formatearNumero(insumo.stock_minimo)} ${medida}`
+  );
 }
 
 function FilaInsumo({ insumo, editando, edicion, onEdicionChange, onIniciarEdicion, onGuardar, onCancelar, error }) {
@@ -67,8 +88,6 @@ function FilaInsumo({ insumo, editando, edicion, onEdicionChange, onIniciarEdici
     );
   }
 
-  const equivalente = equivalenteEnUnidadCompra(insumo);
-
   return (
     <div className="px-4 py-3">
       <button
@@ -90,13 +109,11 @@ function FilaInsumo({ insumo, editando, edicion, onEdicionChange, onIniciarEdici
             )}
           </p>
           {insumo.tipo === 'consumible' ? (
-            <p className="text-xs text-texto-secundario">
-              {insumo.stock_actual} {insumo.tipo_medida} disponibles{equivalente && ` (${equivalente})`} · minimo{' '}
-              {insumo.stock_minimo} {insumo.tipo_medida}
-            </p>
+            <p className="text-xs text-texto-secundario">{textoStockConsumible(insumo)}</p>
           ) : (
             <p className="text-xs text-texto-secundario">
-              {insumo.stock_actual} unidades disponibles · minimo {insumo.stock_minimo} unidades
+              {formatearNumero(insumo.stock_actual)} unidades disponibles · minimo{' '}
+              {formatearNumero(insumo.stock_minimo)} unidades
             </p>
           )}
         </div>

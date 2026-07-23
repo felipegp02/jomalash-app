@@ -22,6 +22,11 @@ export function etiquetaDia(fechaIso) {
   return fecha.toLocaleDateString('es-CO', { day: 'numeric', month: 'long', year: 'numeric' });
 }
 
+// "1.234" en vez de "1234": separador de miles como se usa en Colombia.
+export function formatearNumero(valor) {
+  return new Intl.NumberFormat('es-CO', { maximumFractionDigits: 2 }).format(Number(valor) || 0);
+}
+
 // Intl con { style: 'currency', currency: 'COP' } inserta un espacio entre el
 // simbolo y el numero ("$ 1.234.567"). Se arma el signo a mano para obtener
 // el formato colombiano usual: "$1.234.567", sin ese espacio.
