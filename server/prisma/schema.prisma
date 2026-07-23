@@ -1,0 +1,182 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum RolUsuario {
+  admin
+  empleada
+}
+
+model Sede {
+  id     Int    @id @default(autoincrement())
+  nombre String @db.VarChar(60)
+
+  usuarios    Usuario[]
+  ventas      Venta[]
+  compras     Compra[]
+  metas       Meta[]
+  cierresCaja CierreCaja[]
+
+  @@map("SEDES")
+}
+
+model Usuario {
+  id                  Int        @id @default(autoincrement())
+  nombre              String     @db.VarChar(80)
+  rol                 RolUsuario
+  sede_id             Int
+  password_hash       String     @db.VarChar(255)
+  email_recuperacion  String     @unique @db.VarChar(120)
+  porcentaje_comision Decimal    @db.Decimal(4, 2)
+  activo              Boolean    @default(true)
+
+  sede Sede @relation(fields: [sede_id], references: [id])
+
+  ventasAtendidas  Venta[]              @relation("VentaUsuario")
+  ventasEditadas   Venta[]              @relation("VentaEditadoPor")
+  historialPrecios HistorialPrecio[]
+  cierresCaja      CierreCaja[]
+  resetTokens      PasswordResetToken[]
+
+  @@map("USUARIOS")
+}
+
+model Servicio {
+  id        Int     @id @default(autoincrement())
+  nombre    String  @db.VarChar(120)
+  categoria String  @db.VarChar(40)
+  precio    Int
+  activo    Boolean @default(true)
+
+  ventas           Venta[]
+  recetas          Receta[]
+  historialPrecios HistorialPrecio[]
+
+  @@map("SERVICIOS")
+}
+
+model HistorialPrecio {
+  id              Int      @id @default(autoincrement())
+  servicio_id     Int
+  precio_anterior Int
+  precio_nuevo    Int
+  fecha_cambio    DateTime @default(now())
+  usuario_id      Int
+
+  servicio Servicio @relation(fields: [servicio_id], references: [id])
+  usuario  Usuario  @relation(fields: [usuario_id], references: [id])
+
+  @@map("HISTORIAL_PRECIOS")
+}
+
+model Venta {
+  id               Int       @id @default(autoincrement())
+  fecha            DateTime  @default(now())
+  servicio_id      Int
+  usuario_id       Int
+  sede_id          Int
+  precio_total     Int
+  comision         Int
+  anulada          Boolean   @default(false)
+  motivo_anulacion String?   @db.VarChar(200)
+  editado_por      Int?
+  fecha_edicion    DateTime?
+
+  servicio   Servicio @relation(fields: [servicio_id], references: [id])
+  usuario    Usuario  @relation("VentaUsuario", fields: [usuario_id], references: [id])
+  sede       Sede     @relation(fields: [sede_id], references: [id])
+  editadoPor Usuario? @relation("VentaEditadoPor", fields: [editado_por], references: [id])
+
+  @@map("VENTAS")
+}
+
+model Insumo {
+  id           Int     @id @default(autoincrement())
+  nombre       String  @db.VarChar(120)
+  unidad       String  @db.VarChar(20)
+  stock_actual Decimal @db.Decimal(10, 2)
+  stock_minimo Decimal @db.Decimal(10, 2)
+
+  recetas Receta[]
+  compras Compra[]
+
+  @@map("INSUMOS")
+}
+
+model Receta {
+  id             Int     @id @default(autoincrement())
+  servicio_id    Int
+  insumo_id      Int
+  cantidad_usada Decimal @db.Decimal(10, 2)
+
+  servicio Servicio @relation(fields: [servicio_id], references: [id])
+  insumo   Insumo   @relation(fields: [insumo_id], references: [id])
+
+  @@map("RECETA")
+}
+
+model Compra {
+  id          Int      @id @default(autoincrement())
+  fecha       DateTime @db.Date
+  insumo_id   Int
+  cantidad    Decimal  @db.Decimal(10, 2)
+  costo_total Int
+  sede_id     Int
+
+  insumo Insumo @relation(fields: [insumo_id], references: [id])
+  sede   Sede   @relation(fields: [sede_id], references: [id])
+
+  @@map("COMPRAS")
+}
+
+model Meta {
+  id         Int @id @default(autoincrement())
+  sede_id    Int
+  mes        Int
+  anio       Int
+  meta_venta Int
+
+  sede Sede @relation(fields: [sede_id], references: [id])
+
+  @@unique([sede_id, mes, anio])
+  @@map("METAS")
+}
+
+model CierreCaja {
+  id              Int      @id @default(autoincrement())
+  sede_id         Int
+  fecha           DateTime @db.Date
+  total_servicios Int
+  total_venta     Int
+  total_neto      Int
+  cerrado_por     Int
+
+  sede       Sede    @relation(fields: [sede_id], references: [id])
+  cerradoPor Usuario @relation(fields: [cerrado_por], references: [id])
+
+  @@unique([sede_id, fecha])
+  @@map("CIERRES_CAJA")
+}
+
+// Tabla adicional no listada en la hoja "Modelo de Datos" del documento de
+// arquitectura, necesaria para cumplir RF-02/RNF-04: el enlace de
+// recuperacion de contrasena debe expirar y ser de un solo uso, lo cual
+// requiere persistir el token emitido para poder invalidarlo.
+model PasswordResetToken {
+  id         Int      @id @default(autoincrement())
+  usuario_id Int
+  token_hash String   @db.VarChar(255)
+  expira_en  DateTime
+  usado      Boolean  @default(false)
+  creado_en  DateTime @default(now())
+
+  usuario Usuario @relation(fields: [usuario_id], references: [id])
+
+  @@index([token_hash])
+  @@map("PASSWORD_RESET_TOKENS")
+}

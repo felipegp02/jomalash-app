@@ -1,0 +1,179 @@
+-- CreateTable
+CREATE TABLE `SEDES` (
+    `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `nombre` VARCHAR(60) NOT NULL,
+
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `USUARIOS` (
+    `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `nombre` VARCHAR(80) NOT NULL,
+    `rol` ENUM('admin', 'empleada') NOT NULL,
+    `sede_id` INTEGER NOT NULL,
+    `password_hash` VARCHAR(255) NOT NULL,
+    `email_recuperacion` VARCHAR(120) NOT NULL,
+    `porcentaje_comision` DECIMAL(4, 2) NOT NULL,
+    `activo` BOOLEAN NOT NULL DEFAULT true,
+
+    UNIQUE INDEX `USUARIOS_email_recuperacion_key`(`email_recuperacion`),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `SERVICIOS` (
+    `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `nombre` VARCHAR(120) NOT NULL,
+    `categoria` VARCHAR(40) NOT NULL,
+    `precio` INTEGER NOT NULL,
+    `activo` BOOLEAN NOT NULL DEFAULT true,
+
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `HISTORIAL_PRECIOS` (
+    `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `servicio_id` INTEGER NOT NULL,
+    `precio_anterior` INTEGER NOT NULL,
+    `precio_nuevo` INTEGER NOT NULL,
+    `fecha_cambio` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `usuario_id` INTEGER NOT NULL,
+
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `VENTAS` (
+    `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `fecha` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `servicio_id` INTEGER NOT NULL,
+    `usuario_id` INTEGER NOT NULL,
+    `sede_id` INTEGER NOT NULL,
+    `precio_total` INTEGER NOT NULL,
+    `comision` INTEGER NOT NULL,
+    `anulada` BOOLEAN NOT NULL DEFAULT false,
+    `motivo_anulacion` VARCHAR(200) NULL,
+    `editado_por` INTEGER NULL,
+    `fecha_edicion` DATETIME(3) NULL,
+
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `INSUMOS` (
+    `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `nombre` VARCHAR(120) NOT NULL,
+    `unidad` VARCHAR(20) NOT NULL,
+    `stock_actual` DECIMAL(10, 2) NOT NULL,
+    `stock_minimo` DECIMAL(10, 2) NOT NULL,
+
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `RECETA` (
+    `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `servicio_id` INTEGER NOT NULL,
+    `insumo_id` INTEGER NOT NULL,
+    `cantidad_usada` DECIMAL(10, 2) NOT NULL,
+
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `COMPRAS` (
+    `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `fecha` DATE NOT NULL,
+    `insumo_id` INTEGER NOT NULL,
+    `cantidad` DECIMAL(10, 2) NOT NULL,
+    `costo_total` INTEGER NOT NULL,
+    `sede_id` INTEGER NOT NULL,
+
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `METAS` (
+    `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `sede_id` INTEGER NOT NULL,
+    `mes` INTEGER NOT NULL,
+    `anio` INTEGER NOT NULL,
+    `meta_venta` INTEGER NOT NULL,
+
+    UNIQUE INDEX `METAS_sede_id_mes_anio_key`(`sede_id`, `mes`, `anio`),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `CIERRES_CAJA` (
+    `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `sede_id` INTEGER NOT NULL,
+    `fecha` DATE NOT NULL,
+    `total_servicios` INTEGER NOT NULL,
+    `total_venta` INTEGER NOT NULL,
+    `total_neto` INTEGER NOT NULL,
+    `cerrado_por` INTEGER NOT NULL,
+
+    UNIQUE INDEX `CIERRES_CAJA_sede_id_fecha_key`(`sede_id`, `fecha`),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `PASSWORD_RESET_TOKENS` (
+    `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `usuario_id` INTEGER NOT NULL,
+    `token_hash` VARCHAR(255) NOT NULL,
+    `expira_en` DATETIME(3) NOT NULL,
+    `usado` BOOLEAN NOT NULL DEFAULT false,
+    `creado_en` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+
+    INDEX `PASSWORD_RESET_TOKENS_token_hash_idx`(`token_hash`),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- AddForeignKey
+ALTER TABLE `USUARIOS` ADD CONSTRAINT `USUARIOS_sede_id_fkey` FOREIGN KEY (`sede_id`) REFERENCES `SEDES`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `HISTORIAL_PRECIOS` ADD CONSTRAINT `HISTORIAL_PRECIOS_servicio_id_fkey` FOREIGN KEY (`servicio_id`) REFERENCES `SERVICIOS`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `HISTORIAL_PRECIOS` ADD CONSTRAINT `HISTORIAL_PRECIOS_usuario_id_fkey` FOREIGN KEY (`usuario_id`) REFERENCES `USUARIOS`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `VENTAS` ADD CONSTRAINT `VENTAS_servicio_id_fkey` FOREIGN KEY (`servicio_id`) REFERENCES `SERVICIOS`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `VENTAS` ADD CONSTRAINT `VENTAS_usuario_id_fkey` FOREIGN KEY (`usuario_id`) REFERENCES `USUARIOS`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `VENTAS` ADD CONSTRAINT `VENTAS_sede_id_fkey` FOREIGN KEY (`sede_id`) REFERENCES `SEDES`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `VENTAS` ADD CONSTRAINT `VENTAS_editado_por_fkey` FOREIGN KEY (`editado_por`) REFERENCES `USUARIOS`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `RECETA` ADD CONSTRAINT `RECETA_servicio_id_fkey` FOREIGN KEY (`servicio_id`) REFERENCES `SERVICIOS`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `RECETA` ADD CONSTRAINT `RECETA_insumo_id_fkey` FOREIGN KEY (`insumo_id`) REFERENCES `INSUMOS`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `COMPRAS` ADD CONSTRAINT `COMPRAS_insumo_id_fkey` FOREIGN KEY (`insumo_id`) REFERENCES `INSUMOS`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `COMPRAS` ADD CONSTRAINT `COMPRAS_sede_id_fkey` FOREIGN KEY (`sede_id`) REFERENCES `SEDES`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `METAS` ADD CONSTRAINT `METAS_sede_id_fkey` FOREIGN KEY (`sede_id`) REFERENCES `SEDES`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `CIERRES_CAJA` ADD CONSTRAINT `CIERRES_CAJA_sede_id_fkey` FOREIGN KEY (`sede_id`) REFERENCES `SEDES`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `CIERRES_CAJA` ADD CONSTRAINT `CIERRES_CAJA_cerrado_por_fkey` FOREIGN KEY (`cerrado_por`) REFERENCES `USUARIOS`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `PASSWORD_RESET_TOKENS` ADD CONSTRAINT `PASSWORD_RESET_TOKENS_usuario_id_fkey` FOREIGN KEY (`usuario_id`) REFERENCES `USUARIOS`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
