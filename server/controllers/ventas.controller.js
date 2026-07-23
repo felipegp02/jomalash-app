@@ -13,6 +13,8 @@ function toNumber(valor) {
     : Number(valor);
 }
 
+const METODOS_PAGO = ['efectivo', 'transferencia', 'tarjeta'];
+
 // GET /ventas (RF-21: filtrable por empleada y sede; empleada solo ve las suyas)
 async function listar(req, res) {
   const { sede_id, usuario_id, desde, hasta } = req.query;
@@ -43,10 +45,14 @@ async function listar(req, res) {
 
 // POST /ventas (RF-05, RF-06, RF-07, RF-08, RF-10, RNF-03, RNF-10)
 async function crear(req, res) {
-  const { servicio_id, precio_total } = req.body || {};
+  const { servicio_id, precio_total, metodo_pago } = req.body || {};
 
   if (!servicio_id) {
     return res.status(400).json({ error: 'El servicio es requerido' });
+  }
+
+  if (!METODOS_PAGO.includes(metodo_pago)) {
+    return res.status(400).json({ error: 'El metodo de pago debe ser efectivo, transferencia o tarjeta' });
   }
 
   const servicio = await prisma.servicio.findUnique({ where: { id: Number(servicio_id) } });
@@ -97,6 +103,7 @@ async function crear(req, res) {
         sede_id: usuarioAtiende.sede_id,
         precio_total: total,
         comision,
+        metodo_pago,
       },
       include: ventaConRelaciones,
     });
@@ -118,7 +125,11 @@ async function crear(req, res) {
 // PUT /ventas/:id (RF-09, RNF-11: editar o anular, dejando constancia de quien y cuando)
 async function actualizar(req, res) {
   const id = Number(req.params.id);
-  const { precio_total, anulada, motivo } = req.body || {};
+  const { precio_total, metodo_pago, anulada, motivo } = req.body || {};
+
+  if (metodo_pago !== undefined && !METODOS_PAGO.includes(metodo_pago)) {
+    return res.status(400).json({ error: 'El metodo de pago debe ser efectivo, transferencia o tarjeta' });
+  }
 
   const venta = await prisma.venta.findUnique({ where: { id }, include: { usuario: true } });
   if (!venta) {
@@ -161,25 +172,30 @@ async function actualizar(req, res) {
     return res.json({ venta: ventaAnulada });
   }
 
-  if (precio_total === undefined || precio_total === null || precio_total === '') {
+  const sinCambios = (precio_total === undefined || precio_total === null || precio_total === '')
+    && metodo_pago === undefined;
+  if (sinCambios) {
     return res.status(400).json({ error: 'Nada para actualizar' });
   }
 
-  const total = Number(precio_total);
-  if (!Number.isFinite(total) || total <= 0) {
-    return res.status(400).json({ error: 'El total de la venta debe ser un numero positivo' });
+  const data = { editado_por: req.user.id, fecha_edicion: new Date() };
+
+  if (precio_total !== undefined && precio_total !== null && precio_total !== '') {
+    const total = Number(precio_total);
+    if (!Number.isFinite(total) || total <= 0) {
+      return res.status(400).json({ error: 'El total de la venta debe ser un numero positivo' });
+    }
+    data.precio_total = total;
+    data.comision = Math.round(total * toNumber(venta.usuario.porcentaje_comision));
   }
 
-  const comision = Math.round(total * toNumber(venta.usuario.porcentaje_comision));
+  if (metodo_pago !== undefined) {
+    data.metodo_pago = metodo_pago;
+  }
 
   const actualizada = await prisma.venta.update({
     where: { id },
-    data: {
-      precio_total: total,
-      comision,
-      editado_por: req.user.id,
-      fecha_edicion: new Date(),
-    },
+    data,
     include: ventaConRelaciones,
   });
 

@@ -8,6 +8,12 @@ const campoLabel = 'text-sm font-medium text-texto-secundario';
 const campoInput =
   'rounded-xl border border-borde-tarjeta bg-white px-4 py-3 text-texto outline-none focus:border-dorado focus:ring-2 focus:ring-dorado/20';
 
+const METODOS_PAGO = [
+  { valor: 'efectivo', etiqueta: 'Efectivo' },
+  { valor: 'transferencia', etiqueta: 'Transferencia' },
+  { valor: 'tarjeta', etiqueta: 'Tarjeta' },
+];
+
 export default function Registrar({ onVentaGuardada }) {
   const { usuario } = useAuth();
   const esAdmin = usuario.rol === 'admin';
@@ -17,6 +23,7 @@ export default function Registrar({ onVentaGuardada }) {
   const [servicioId, setServicioId] = useState('');
   const [empleadaId, setEmpleadaId] = useState('');
   const [total, setTotal] = useState('');
+  const [metodoPago, setMetodoPago] = useState('');
   const [enviando, setEnviando] = useState(false);
   const [error, setError] = useState('');
   const [resumen, setResumen] = useState(null);
@@ -58,12 +65,17 @@ export default function Registrar({ onVentaGuardada }) {
       setError('Selecciona una empleada');
       return;
     }
+    if (!metodoPago) {
+      setError('Selecciona un metodo de pago');
+      return;
+    }
 
     setEnviando(true);
     try {
       const body = {
         servicio_id: Number(servicioId),
         precio_total: total === '' ? undefined : Number(total),
+        metodo_pago: metodoPago,
       };
       if (esAdmin) {
         body.usuario_id = Number(empleadaId);
@@ -77,6 +89,7 @@ export default function Registrar({ onVentaGuardada }) {
         empleada: data.venta.usuario.nombre,
         total: data.venta.precio_total,
         hora: formatearHora(data.venta.fecha),
+        metodoPago: data.venta.metodo_pago,
       });
       mostrarToast();
       onVentaGuardada?.();
@@ -84,6 +97,7 @@ export default function Registrar({ onVentaGuardada }) {
       setServicioId('');
       setEmpleadaId('');
       setTotal('');
+      setMetodoPago('');
     } catch (err) {
       setError(err.message);
     } finally {
@@ -153,6 +167,26 @@ export default function Registrar({ onVentaGuardada }) {
           />
         </div>
 
+        <div className="flex flex-col gap-1.5">
+          <span className={campoLabel}>Metodo de pago</span>
+          <div className="grid grid-cols-3 gap-2">
+            {METODOS_PAGO.map((m) => (
+              <button
+                key={m.valor}
+                type="button"
+                onClick={() => setMetodoPago(m.valor)}
+                className={`rounded-xl border px-2 py-2.5 text-sm font-medium transition-colors ${
+                  metodoPago === m.valor
+                    ? 'border-dorado bg-dorado-fondo text-texto'
+                    : 'border-borde-tarjeta bg-white text-texto-secundario hover:text-texto'
+                }`}
+              >
+                {m.etiqueta}
+              </button>
+            ))}
+          </div>
+        </div>
+
         {error && <p className="text-sm text-red-600">{error}</p>}
 
         <button
@@ -170,6 +204,9 @@ export default function Registrar({ onVentaGuardada }) {
           <p className="font-medium text-texto">{resumen.servicio}</p>
           <p className="text-sm text-texto-secundario">Empleada: {resumen.empleada}</p>
           <p className="text-sm text-texto-secundario">Total: {formatearMoneda(resumen.total)}</p>
+          <p className="text-sm text-texto-secundario">
+            Pago: {METODOS_PAGO.find((m) => m.valor === resumen.metodoPago)?.etiqueta}
+          </p>
           <p className="text-sm text-texto-secundario">Hora: {resumen.hora}</p>
         </div>
       )}

@@ -12,6 +12,15 @@ enum RolUsuario {
   empleada
 }
 
+// Se usa tanto en el registro de la venta como en el cierre de caja (Fase 7)
+// para poder desglosar el efectivo fisico del dinero que entra por
+// transferencia o datafono.
+enum MetodoPago {
+  efectivo
+  transferencia
+  tarjeta
+}
+
 model Sede {
   id     Int    @id @default(autoincrement())
   nombre String @db.VarChar(60)
@@ -82,6 +91,7 @@ model Venta {
   sede_id          Int
   precio_total     Int
   comision         Int
+  metodo_pago      MetodoPago @default(efectivo)
   anulada          Boolean   @default(false)
   motivo_anulacion String?   @db.VarChar(200)
   editado_por      Int?
