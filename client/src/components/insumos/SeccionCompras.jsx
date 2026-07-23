@@ -22,9 +22,11 @@ export default function SeccionCompras() {
   const [error, setError] = useState('');
 
   const insumoSeleccionado = insumos.find((i) => String(i.id) === insumoId);
-  const tieneEquivalencia = insumoSeleccionado && insumoSeleccionado.equivalencia > 1;
+  const esHerramienta = insumoSeleccionado?.tipo === 'herramienta';
+  const tieneConversion =
+    insumoSeleccionado && !esHerramienta && insumoSeleccionado.contenido_por_compra > 1;
   const totalEnUnidadUso =
-    tieneEquivalencia && cantidad !== '' ? Number(cantidad) * insumoSeleccionado.equivalencia : null;
+    tieneConversion && cantidad !== '' ? Number(cantidad) * insumoSeleccionado.contenido_por_compra : null;
 
   function cargarCompras() {
     setCargando(true);
@@ -109,11 +111,14 @@ export default function SeccionCompras() {
             <input
               type="number"
               min="0"
-              step="0.01"
+              step={esHerramienta ? '1' : '0.01'}
               value={cantidad}
               onChange={(e) => setCantidad(e.target.value)}
               className={campoInput}
             />
+            {esHerramienta && (
+              <p className="text-xs text-texto-secundario">Las herramientas se compran en unidades enteras.</p>
+            )}
           </div>
 
           <div className="col-span-2 flex flex-col gap-1">
@@ -132,7 +137,7 @@ export default function SeccionCompras() {
         {totalEnUnidadUso !== null && (
           <p className="rounded-lg bg-dorado-fondo px-3 py-2 text-sm text-texto">
             Compraste {cantidad} {insumoSeleccionado.unidad_compra} = {totalEnUnidadUso}{' '}
-            {insumoSeleccionado.unidad} de stock
+            {insumoSeleccionado.tipo_medida} de stock
           </p>
         )}
 

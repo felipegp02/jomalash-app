@@ -1,7 +1,7 @@
 const prisma = require('../lib/prisma');
 
 const compraConRelaciones = {
-  insumo: { select: { nombre: true, unidad: true, unidad_compra: true } },
+  insumo: { select: { nombre: true, tipo: true, tipo_medida: true, unidad_compra: true } },
   sede: { select: { nombre: true } },
 };
 
@@ -44,15 +44,24 @@ async function crear(req, res) {
     return res.status(400).json({ error: 'La cantidad debe ser un numero positivo' });
   }
 
+  // Las herramientas se compran y se cuentan en unidades enteras, sin
+  // conversion (RF nuevo del modulo de insumos: "solo suma unidades enteras
+  // al stock, sin conversion").
+  if (insumo.tipo === 'herramienta' && !Number.isInteger(cantidadNum)) {
+    return res.status(400).json({ error: 'Las herramientas se compran en unidades enteras' });
+  }
+
   const costoNum = Number(costo_total);
   if (!Number.isFinite(costoNum) || costoNum <= 0) {
     return res.status(400).json({ error: 'El costo total debe ser un numero positivo' });
   }
 
   // "cantidad" queda registrada en unidad_compra (ej. 1 paquete), pero el
-  // stock se lleva en unidad de uso (ej. toallas), asi que lo que se suma
-  // al stock_actual es cantidad x equivalencia, no la cantidad comprada tal cual.
-  const incrementoStock = cantidadNum * Number(insumo.equivalencia);
+  // stock de un consumible se lleva en su unidad de uso (ej. ml), asi que
+  // lo que se suma al stock_actual es cantidad x contenido_por_compra, no
+  // la cantidad comprada tal cual. Las herramientas no tienen conversion.
+  const incrementoStock =
+    insumo.tipo === 'herramienta' ? cantidadNum : cantidadNum * Number(insumo.contenido_por_compra);
 
   const compra = await prisma.$transaction(async (tx) => {
     const nuevaCompra = await tx.compra.create({

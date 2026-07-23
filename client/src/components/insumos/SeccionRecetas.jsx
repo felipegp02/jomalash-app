@@ -19,7 +19,9 @@ export default function SeccionRecetas() {
 
   useEffect(() => {
     api.get('/servicios').then((data) => setServicios(data.servicios));
-    api.get('/insumos').then((data) => setInsumos(data.insumos));
+    // Las recetas solo pueden usar consumibles: una herramienta no se
+    // descuenta al vender, no tiene sentido ofrecerla aca.
+    api.get('/insumos').then((data) => setInsumos(data.insumos.filter((i) => i.tipo === 'consumible')));
   }, []);
 
   useEffect(() => {
@@ -121,7 +123,7 @@ export default function SeccionRecetas() {
                     <option value="">Insumo</option>
                     {insumos.map((i) => (
                       <option key={i.id} value={i.id}>
-                        {i.nombre} ({i.unidad})
+                        {i.nombre} ({i.tipo_medida})
                       </option>
                     ))}
                   </select>

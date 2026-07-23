@@ -1,5 +1,7 @@
 const prisma = require('../lib/prisma');
 
+const insumoSelect = { nombre: true, tipo_medida: true, tipo: true };
+
 // GET /receta/:servicio_id
 async function obtener(req, res) {
   const servicioId = Number(req.params.servicio_id);
@@ -11,7 +13,7 @@ async function obtener(req, res) {
 
   const receta = await prisma.receta.findMany({
     where: { servicio_id: servicioId },
-    include: { insumo: { select: { nombre: true, unidad: true } } },
+    include: { insumo: { select: insumoSelect } },
     orderBy: { id: 'asc' },
   });
 
@@ -45,9 +47,15 @@ async function actualizar(req, res) {
   }
 
   if (insumoIds.length) {
-    const insumosValidos = await prisma.insumo.count({ where: { id: { in: insumoIds } } });
-    if (insumosValidos !== insumoIds.length) {
+    const insumosUsados = await prisma.insumo.findMany({ where: { id: { in: insumoIds } } });
+    if (insumosUsados.length !== insumoIds.length) {
       return res.status(400).json({ error: 'Alguno de los insumos no existe' });
+    }
+    // Las recetas solo pueden usar consumibles: una herramienta no se
+    // descuenta al vender, no tiene sentido ponerla en una receta.
+    const conHerramienta = insumosUsados.some((i) => i.tipo === 'herramienta');
+    if (conHerramienta) {
+      return res.status(400).json({ error: 'Las recetas solo pueden usar insumos consumibles, no herramientas' });
     }
   }
 
@@ -66,7 +74,7 @@ async function actualizar(req, res) {
 
     return tx.receta.findMany({
       where: { servicio_id: servicioId },
-      include: { insumo: { select: { nombre: true, unidad: true } } },
+      include: { insumo: { select: insumoSelect } },
       orderBy: { id: 'asc' },
     });
   });

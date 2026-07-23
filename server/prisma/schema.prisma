@@ -105,17 +105,34 @@ model Venta {
   @@map("VENTAS")
 }
 
+// Un consumible se descuenta automatico por receta al registrar una venta.
+// Una herramienta no se descuenta nunca: solo se lleva inventario manual
+// (se ajusta a mano al comprar una nueva, o si se daña o se pierde).
+enum TipoInsumo {
+  consumible
+  herramienta
+}
+
+// Solo aplica a consumibles: en que medida se lleva el stock de uso.
+enum TipoMedida {
+  ml
+  gramos
+  unidades
+}
+
 model Insumo {
-  id           Int     @id @default(autoincrement())
-  nombre       String  @db.VarChar(120)
-  // Unidad en la que se consume/descuenta por receta (ej: ml, toalla).
-  unidad       String  @db.VarChar(20)
-  // Unidad en la que se compra (ej: paquete, frasco). Por defecto igual a
-  // "unidad" para insumos donde se compra y se gasta en la misma medida.
-  unidad_compra String  @default("") @db.VarChar(20)
-  // Cuantas unidades de uso trae cada unidad de compra (ej: 1 paquete = 100
-  // toallas). 1 cuando unidad_compra y unidad son la misma medida.
-  equivalencia Decimal @db.Decimal(10, 2) @default(1)
+  id   Int        @id @default(autoincrement())
+  nombre String   @db.VarChar(120)
+  tipo TipoInsumo @default(consumible)
+  // Solo consumibles tienen tipo_medida; una herramienta se cuenta siempre
+  // como unidades enteras, sin necesidad de distinguirlo.
+  tipo_medida TipoMedida?
+  // Como se compra en la tienda (ej: frasco, paquete, rollo, caja, unidad).
+  unidad_compra String @db.VarChar(20)
+  // Cuanto trae cada unidad de compra, en tipo_medida (ej: un frasco de
+  // esmalte trae 15 ml). Para herramientas no se usa (se compran en
+  // unidades enteras, sin conversion).
+  contenido_por_compra Decimal @db.Decimal(10, 2) @default(1)
   stock_actual Decimal @db.Decimal(10, 2)
   stock_minimo Decimal @db.Decimal(10, 2)
 
