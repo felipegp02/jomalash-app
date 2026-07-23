@@ -133,8 +133,11 @@ model Insumo {
   // esmalte trae 15 ml). Para herramientas no se usa (se compran en
   // unidades enteras, sin conversion).
   contenido_por_compra Decimal @db.Decimal(10, 2) @default(1)
-  stock_actual Decimal @db.Decimal(10, 2)
-  stock_minimo Decimal @db.Decimal(10, 2)
+  // Decimal(10,4), igual que Receta.cantidad_usada: un consumible que se
+  // descuenta 0.003 por servicio necesita esa precision para que el
+  // descuento no se redondee a 0 en cada venta.
+  stock_actual Decimal @db.Decimal(10, 4)
+  stock_minimo Decimal @db.Decimal(10, 4)
 
   recetas Receta[]
   compras Compra[]
@@ -146,7 +149,10 @@ model Receta {
   id             Int     @id @default(autoincrement())
   servicio_id    Int
   insumo_id      Int
-  cantidad_usada Decimal @db.Decimal(10, 2)
+  // Decimal(10,4): algunos consumibles se desgastan en fracciones muy
+  // chicas por servicio (ej. 0.003 unidades de una lima), 2 decimales
+  // redondeaba eso a 0.
+  cantidad_usada Decimal @db.Decimal(10, 4)
 
   servicio Servicio @relation(fields: [servicio_id], references: [id])
   insumo   Insumo   @relation(fields: [insumo_id], references: [id])
