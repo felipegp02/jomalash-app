@@ -5,10 +5,14 @@ export function formatearHora(fechaIso) {
   });
 }
 
+// Intl con { style: 'currency', currency: 'COP' } inserta un espacio entre el
+// simbolo y el numero ("$ 1.234.567"). Se arma el signo a mano para obtener
+// el formato colombiano usual: "$1.234.567", sin ese espacio.
 export function formatearMoneda(valor) {
-  return new Intl.NumberFormat('es-CO', {
-    style: 'currency',
-    currency: 'COP',
-    maximumFractionDigits: 0,
-  }).format(valor);
+  const redondeado = Math.round(valor || 0);
+  const signo = redondeado < 0 ? '-' : '';
+  const numero = new Intl.NumberFormat('es-CO', { maximumFractionDigits: 0 }).format(
+    Math.abs(redondeado),
+  );
+  return `${signo}$${numero}`;
 }

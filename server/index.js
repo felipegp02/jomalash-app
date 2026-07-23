@@ -9,6 +9,7 @@ const ventasRoutes = require('./routes/ventas.routes');
 const serviciosRoutes = require('./routes/servicios.routes');
 const usuariosRoutes = require('./routes/usuarios.routes');
 const sedesRoutes = require('./routes/sedes.routes');
+const dashboardRoutes = require('./routes/dashboard.routes');
 const errorHandler = require('./middleware/errorHandler');
 
 const app = express();
@@ -26,6 +27,7 @@ app.use('/ventas', ventasRoutes);
 app.use('/servicios', serviciosRoutes);
 app.use('/usuarios', usuariosRoutes);
 app.use('/sedes', sedesRoutes);
+app.use('/dashboard', dashboardRoutes);
 
 app.use((req, res) => {
   res.status(404).json({ error: 'Ruta no encontrada' });

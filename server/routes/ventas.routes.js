@@ -1,11 +1,12 @@
 const express = require('express');
 const { listar, crear, actualizar } = require('../controllers/ventas.controller');
 const { authenticate, authorize } = require('../middleware/auth.middleware');
+const asyncHandler = require('../middleware/asyncHandler');
 
 const router = express.Router();
 
-router.get('/', authenticate, listar);
-router.post('/', authenticate, crear);
-router.put('/:id', authenticate, authorize('admin'), actualizar);
+router.get('/', authenticate, asyncHandler(listar));
+router.post('/', authenticate, asyncHandler(crear));
+router.put('/:id', authenticate, authorize('admin'), asyncHandler(actualizar));
 
 module.exports = router;
