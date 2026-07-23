@@ -16,6 +16,14 @@ const NUEVO_VACIO = {
   stock_minimo: '',
 };
 
+// Pluralizacion simple en espanol: palabras terminadas en vocal suman "s"
+// (frasco -> frascos), las que terminan en consonante suman "es" (unidad ->
+// unidades). Antes se le sumaba "s" a todo y "unidad" quedaba "unidads".
+function pluralizar(palabra) {
+  const ultima = palabra.trim().slice(-1).toLowerCase();
+  return 'aeiouáéíóú'.includes(ultima) ? `${palabra}s` : `${palabra}es`;
+}
+
 // "255 ml disponibles (≈ 1 frasco)": solo aplica a consumibles. Division
 // entera para saber cuantas unidades de compra completas hay; si sobra
 // resto, es un numero aproximado (≈), no exacto.
@@ -26,7 +34,7 @@ function equivalenteEnUnidadCompra(insumo) {
 
   const cantidad = Math.floor(insumo.stock_actual / insumo.contenido_por_compra);
   const exacto = insumo.stock_actual % insumo.contenido_por_compra === 0;
-  const unidad = cantidad === 1 ? insumo.unidad_compra : `${insumo.unidad_compra}s`;
+  const unidad = cantidad === 1 ? insumo.unidad_compra : pluralizar(insumo.unidad_compra);
 
   return `${exacto ? '' : '≈ '}${cantidad} ${unidad}`;
 }
