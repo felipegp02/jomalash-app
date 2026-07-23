@@ -4,13 +4,14 @@ import { api } from './api/client';
 import Login from './pages/Login';
 import Registrar from './pages/Registrar';
 import Dashboard from './pages/Dashboard';
+import Historial from './pages/Historial';
 import Sidebar from './components/Sidebar';
 import BottomNav from './components/BottomNav';
 import Topbar from './components/Topbar';
 import ResumenDia from './components/ResumenDia';
 import './index.css';
 
-const TITULOS = { dashboard: 'Dashboard', registrar: 'Registrar venta' };
+const TITULOS = { dashboard: 'Dashboard', registrar: 'Registrar venta', historial: 'Historial' };
 
 function App() {
   const { usuario, cargando, logout } = useAuth();
@@ -72,6 +73,8 @@ function App() {
               />
             </div>
           )}
+
+          {paginaActual === 'historial' && <Historial />}
         </main>
       </div>
 

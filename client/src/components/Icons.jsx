@@ -75,3 +75,20 @@ export function IconChevronDown(props) {
     </svg>
   );
 }
+
+export function IconX(props) {
+  return (
+    <svg {...base} {...props}>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M9 9l6 6M15 9l-6 6" />
+    </svg>
+  );
+}
+
+export function IconChevronRight(props) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M9 6l6 6-6 6" />
+    </svg>
+  );
+}

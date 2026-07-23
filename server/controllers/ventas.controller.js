@@ -15,9 +15,9 @@ function toNumber(valor) {
 
 const METODOS_PAGO = ['efectivo', 'transferencia', 'tarjeta'];
 
-// GET /ventas (RF-21: filtrable por empleada y sede; empleada solo ve las suyas)
+// GET /ventas (RF-21: filtrable por empleada, sede, servicio y rango de fechas; empleada solo ve las suyas)
 async function listar(req, res) {
-  const { sede_id, usuario_id, desde, hasta } = req.query;
+  const { sede_id, usuario_id, servicio_id, desde, hasta } = req.query;
   const where = {};
 
   if (req.user.rol === 'empleada') {
@@ -27,11 +27,15 @@ async function listar(req, res) {
   }
 
   if (sede_id) where.sede_id = Number(sede_id);
+  if (servicio_id) where.servicio_id = Number(servicio_id);
 
   if (desde || hasta) {
     where.fecha = {};
+    // "hasta" se trata como limite exclusivo (igual que en /dashboard/*): el
+    // caller debe mandar el inicio del dia siguiente para incluir el dia
+    // completo, no una hora exacta que dejaria afuera casi todo ese dia.
     if (desde) where.fecha.gte = new Date(desde);
-    if (hasta) where.fecha.lte = new Date(hasta);
+    if (hasta) where.fecha.lt = new Date(hasta);
   }
 
   const ventas = await prisma.venta.findMany({

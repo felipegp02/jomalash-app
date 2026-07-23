@@ -5,6 +5,23 @@ export function formatearHora(fechaIso) {
   });
 }
 
+function esMismoDia(a, b) {
+  return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+}
+
+// Agrupador estilo app financiera: "Hoy", "Ayer", y despues fecha completa.
+export function etiquetaDia(fechaIso) {
+  const fecha = new Date(fechaIso);
+  const hoy = new Date();
+  const ayer = new Date();
+  ayer.setDate(ayer.getDate() - 1);
+
+  if (esMismoDia(fecha, hoy)) return 'Hoy';
+  if (esMismoDia(fecha, ayer)) return 'Ayer';
+
+  return fecha.toLocaleDateString('es-CO', { day: 'numeric', month: 'long', year: 'numeric' });
+}
+
 // Intl con { style: 'currency', currency: 'COP' } inserta un espacio entre el
 // simbolo y el numero ("$ 1.234.567"). Se arma el signo a mano para obtener
 // el formato colombiano usual: "$1.234.567", sin ese espacio.
