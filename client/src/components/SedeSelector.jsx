@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { IconTienda, IconChevronDown } from './Icons';
 
-export default function SedeSelector({ usuario, sedes, sedeSeleccionada, onChangeSede }) {
+export default function SedeSelector({ usuario, sedes, sedeSeleccionada, onChangeSede, compacto = false }) {
   const [abierto, setAbierto] = useState(false);
   const ref = useRef(null);
 
@@ -16,9 +16,9 @@ export default function SedeSelector({ usuario, sedes, sedeSeleccionada, onChang
   // Una empleada pertenece a una sola sede: se muestra fija, sin selector.
   if (usuario.rol !== 'admin') {
     return (
-      <span className="flex items-center gap-2 text-sm font-medium text-texto">
-        <IconTienda width={18} height={18} />
-        Sede: {usuario.sede}
+      <span className={`flex items-center gap-2 font-medium text-texto ${compacto ? 'text-xs' : 'text-sm'}`}>
+        {!compacto && <IconTienda width={18} height={18} />}
+        {compacto ? usuario.sede : `Sede: ${usuario.sede}`}
       </span>
     );
   }
@@ -33,13 +33,15 @@ export default function SedeSelector({ usuario, sedes, sedeSeleccionada, onChang
       <button
         type="button"
         onClick={() => setAbierto((v) => !v)}
-        className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm font-medium text-texto hover:bg-sidebar"
+        className={`flex items-center rounded-lg font-medium text-texto hover:bg-sidebar ${
+          compacto ? 'gap-1 px-1 py-0.5 text-xs' : 'gap-2 px-2 py-1.5 text-sm'
+        }`}
       >
-        <IconTienda width={18} height={18} />
-        Sede: {nombreActual}
+        {!compacto && <IconTienda width={18} height={18} />}
+        {compacto ? nombreActual : `Sede: ${nombreActual}`}
         <IconChevronDown
-          width={14}
-          height={14}
+          width={compacto ? 12 : 14}
+          height={compacto ? 12 : 14}
           className={`transition-transform ${abierto ? 'rotate-180' : ''}`}
         />
       </button>

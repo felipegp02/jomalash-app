@@ -5,10 +5,17 @@ export default function Topbar({ usuario, titulo, onLogout, sedes, sedeSeleccion
   return (
     <header className="border-b border-borde-tarjeta bg-white px-5 pb-5 pt-5">
       <div className="flex items-center justify-between md:hidden">
-        <span className="flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-texto-secundario">
+        <div className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-texto-secundario">
           <span className="h-2 w-2 shrink-0 rounded-full bg-dorado" />
-          Jomalash · {usuario.sede}
-        </span>
+          <span>Jomalash ·</span>
+          <SedeSelector
+            usuario={usuario}
+            sedes={sedes}
+            sedeSeleccionada={sedeSeleccionada}
+            onChangeSede={onChangeSede}
+            compacto
+          />
+        </div>
         <div className="flex items-center gap-3">
           <Avatar nombre={usuario.nombre} />
           <button
