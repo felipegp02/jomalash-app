@@ -301,16 +301,21 @@ async function tendencia(req, res) {
     const totalesPorDia = new Map();
     for (const v of ventas) {
       const clave = new Date(v.fecha).toDateString();
-      totalesPorDia.set(clave, (totalesPorDia.get(clave) || 0) + v.precio_total);
+      const actual = totalesPorDia.get(clave) || { venta: 0, servicios: 0 };
+      actual.venta += v.precio_total;
+      actual.servicios += 1;
+      totalesPorDia.set(clave, actual);
     }
 
     const puntos = [];
     for (let i = 0; i < 30; i += 1) {
       const dia = new Date(desde);
       dia.setDate(dia.getDate() + i);
+      const totales = totalesPorDia.get(dia.toDateString());
       puntos.push({
         etiqueta: `${dia.getDate()} ${MESES[dia.getMonth()]}`,
-        venta: totalesPorDia.get(dia.toDateString()) || 0,
+        venta: totales?.venta || 0,
+        servicios: totales?.servicios || 0,
       });
     }
 
@@ -325,11 +330,13 @@ async function tendencia(req, res) {
     const agregado = await prisma.venta.aggregate({
       where: { ...filtros, anulada: false, fecha: { gte: inicio, lt: fin } },
       _sum: { precio_total: true },
+      _count: { _all: true },
     });
 
     puntos.push({
       etiqueta: `${MESES[inicio.getMonth()]} ${inicio.getFullYear()}`,
       venta: agregado._sum.precio_total || 0,
+      servicios: agregado._count._all || 0,
     });
   }
 

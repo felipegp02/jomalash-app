@@ -8,14 +8,34 @@ import KpiCard from '../components/dashboard/KpiCard';
 import CardSkeleton from '../components/dashboard/CardSkeleton';
 import ChartBarra from '../components/dashboard/ChartBarra';
 import ChartDona from '../components/dashboard/ChartDona';
-import ChartLinea from '../components/dashboard/ChartLinea';
 import ChartEmpleadas from '../components/dashboard/ChartEmpleadas';
 import RankingServicios from '../components/dashboard/RankingServicios';
 import DesgloseSedes from '../components/dashboard/DesgloseSedes';
 import DesglosePago from '../components/dashboard/DesglosePago';
+import TarjetaTendencia from '../components/dashboard/TarjetaTendencia';
 
 function hoyISO() {
   return new Date().toISOString().slice(0, 10);
+}
+
+// Cada tarjeta de tendencia (venta, servicios) tiene su propio toggle
+// Por mes / Por dia y pide sus datos por separado, sin depender del
+// selector de periodo general del dashboard.
+function useTendencia(filtros) {
+  const [vista, setVista] = useState('mensual');
+  const [puntos, setPuntos] = useState(null);
+
+  useEffect(() => {
+    const params = new URLSearchParams({ granularidad: vista });
+    if (filtros.sedeId) params.set('sede_id', filtros.sedeId);
+    if (filtros.servicioId) params.set('servicio_id', filtros.servicioId);
+    if (filtros.usuarioId) params.set('usuario_id', filtros.usuarioId);
+
+    setPuntos(null);
+    api.get(`/dashboard/tendencia?${params}`).then((d) => setPuntos(d.puntos));
+  }, [vista, filtros.sedeId, filtros.servicioId, filtros.usuarioId]);
+
+  return { vista, setVista, puntos };
 }
 
 function diaHoraFuerte(tiempo) {
@@ -54,8 +74,6 @@ export default function Dashboard() {
   const [tiempo, setTiempo] = useState(null);
   const [categorias, setCategorias] = useState(null);
   const [rankingServicios, setRankingServicios] = useState(null);
-  const [tendencia, setTendencia] = useState(null);
-  const [vistaTendencia, setVistaTendencia] = useState('mensual');
   const [rankingEmpleadas, setRankingEmpleadas] = useState(null);
   const [cargando, setCargando] = useState(true);
 
@@ -110,18 +128,8 @@ export default function Dashboard() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rango.desde.getTime(), rango.hasta.getTime(), filtros.sedeId, filtros.servicioId, filtros.usuarioId, filtros.comparar, esAdmin]);
 
-  // La tendencia no depende del selector de periodo (siempre son 6 meses o
-  // 30 dias fijos), asi que se pide aparte para no re-disparar todo lo demas
-  // cuando solo se cambia entre vista "Por mes" y "Por dia".
-  useEffect(() => {
-    const paramsTendencia = new URLSearchParams({ granularidad: vistaTendencia });
-    if (filtros.sedeId) paramsTendencia.set('sede_id', filtros.sedeId);
-    if (filtros.servicioId) paramsTendencia.set('servicio_id', filtros.servicioId);
-    if (filtros.usuarioId) paramsTendencia.set('usuario_id', filtros.usuarioId);
-
-    setTendencia(null);
-    api.get(`/dashboard/tendencia?${paramsTendencia}`).then((d) => setTendencia(d.puntos));
-  }, [vistaTendencia, filtros.sedeId, filtros.servicioId, filtros.usuarioId]);
+  const tendenciaVenta = useTendencia(filtros);
+  const tendenciaServicios = useTendencia(filtros);
 
   const empleadaSeleccionada = esAdmin
     ? empleadas.find((e) => String(e.id) === filtros.usuarioId)
@@ -282,50 +290,32 @@ export default function Dashboard() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <div className="rounded-[20px] border border-borde-tarjeta bg-white p-5 shadow-sm">
-          <div className="mb-3 flex items-center justify-between gap-2">
-            <h3 className="text-sm font-semibold text-texto">
-              Tendencia de venta {vistaTendencia === 'mensual' ? '(ultimos 6 meses)' : '(ultimos 30 dias)'}
-            </h3>
-            <div className="flex shrink-0 gap-1 rounded-lg border border-borde-tarjeta bg-crema p-0.5">
-              {[
-                { valor: 'mensual', etiqueta: 'Por mes' },
-                { valor: 'diario', etiqueta: 'Por dia' },
-              ].map((op) => (
-                <button
-                  key={op.valor}
-                  type="button"
-                  onClick={() => setVistaTendencia(op.valor)}
-                  className={`rounded-md px-2.5 py-1 text-xs font-medium transition-colors ${
-                    vistaTendencia === op.valor
-                      ? 'bg-white text-texto shadow-sm'
-                      : 'text-texto-secundario hover:text-texto'
-                  }`}
-                >
-                  {op.etiqueta}
-                </button>
-              ))}
-            </div>
-          </div>
-          {!tendencia ? (
-            <CardSkeleton alto="h-48" />
-          ) : (
-            <ChartLinea
-              etiquetas={tendencia.map((p) => p.etiqueta)}
-              datos={tendencia.map((p) => p.venta)}
-            />
-          )}
-        </div>
+      <TarjetaTendencia
+        titulo="Tendencia de venta"
+        vista={tendenciaVenta.vista}
+        onCambiarVista={tendenciaVenta.setVista}
+        puntos={tendenciaVenta.puntos}
+        campo="venta"
+        formatoValor={formatearMoneda}
+      />
 
-        <div className="rounded-[20px] border border-borde-tarjeta bg-white p-5 shadow-sm">
-          <h3 className="mb-3 text-sm font-semibold text-texto">Venta por metodo de pago</h3>
-          {cargando || !resumen ? (
-            <CardSkeleton alto="h-48" />
-          ) : (
-            <DesglosePago porMetodoPago={resumen.porMetodoPago} />
-          )}
-        </div>
+      <TarjetaTendencia
+        titulo="Tendencia de servicios realizados"
+        vista={tendenciaServicios.vista}
+        onCambiarVista={tendenciaServicios.setVista}
+        puntos={tendenciaServicios.puntos}
+        campo="servicios"
+        formatoValor={(v) => `${v} ${v === 1 ? 'servicio' : 'servicios'}`}
+        enteros
+      />
+
+      <div className="rounded-[20px] border border-borde-tarjeta bg-white p-5 shadow-sm">
+        <h3 className="mb-3 text-sm font-semibold text-texto">Venta por metodo de pago</h3>
+        {cargando || !resumen ? (
+          <CardSkeleton alto="h-48" />
+        ) : (
+          <DesglosePago porMetodoPago={resumen.porMetodoPago} />
+        )}
       </div>
 
       {mostrarRankingsEquipo && (
