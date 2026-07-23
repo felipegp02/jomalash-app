@@ -9,6 +9,7 @@ import {
   PointElement,
   LineElement,
   LineController,
+  Filler,
   Tooltip,
   Legend,
 } from 'chart.js';
@@ -23,6 +24,7 @@ Chart.register(
   PointElement,
   LineElement,
   LineController,
+  Filler,
   Tooltip,
   Legend,
 );

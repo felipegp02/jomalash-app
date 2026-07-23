@@ -43,14 +43,14 @@ async function main() {
 
   const empleada = await prisma.usuario.upsert({
     where: { email_recuperacion: emailEmpleada },
-    update: {},
+    update: { porcentaje_comision: 0.5 },
     create: {
       nombre: nombreEmpleada,
       rol: 'empleada',
       sede_id: sedeCastilla.id,
       password_hash: passwordHashEmpleada,
       email_recuperacion: emailEmpleada,
-      porcentaje_comision: 0.7,
+      porcentaje_comision: 0.5,
       activo: true,
     },
   });

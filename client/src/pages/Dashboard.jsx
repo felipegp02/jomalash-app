@@ -190,7 +190,13 @@ export default function Dashboard() {
               valor={formatearMoneda(resumen.gananciaNeta)}
               actual={filtros.comparar ? resumen.gananciaNeta : null}
               anterior={filtros.comparar ? resumen.comparacion?.gananciaNeta : null}
-            />
+            >
+              <div className="mt-1 flex flex-col gap-0.5 text-xs text-texto-secundario">
+                <p>Venta bruta: {formatearMoneda(resumen.ventaBruta)}</p>
+                <p>− Comisiones: {formatearMoneda(resumen.comisionTotal)}</p>
+                <p>− Insumos: {formatearMoneda(resumen.costoInsumos)}</p>
+              </div>
+            </KpiCard>
 
             {modoIndividual ? (
               <KpiCard etiqueta="Dia y hora mas fuerte" valor={diaHoraFuerte(tiempo) || 'Sin datos'} />
