@@ -21,6 +21,11 @@ export default function SeccionCompras() {
   const [enviando, setEnviando] = useState(false);
   const [error, setError] = useState('');
 
+  const insumoSeleccionado = insumos.find((i) => String(i.id) === insumoId);
+  const tieneEquivalencia = insumoSeleccionado && insumoSeleccionado.equivalencia > 1;
+  const totalEnUnidadUso =
+    tieneEquivalencia && cantidad !== '' ? Number(cantidad) * insumoSeleccionado.equivalencia : null;
+
   function cargarCompras() {
     setCargando(true);
     api
@@ -79,7 +84,7 @@ export default function SeccionCompras() {
               <option value="">Selecciona un insumo</option>
               {insumos.map((i) => (
                 <option key={i.id} value={i.id}>
-                  {i.nombre} ({i.unidad})
+                  {i.nombre} ({i.unidad_compra})
                 </option>
               ))}
             </select>
@@ -98,7 +103,9 @@ export default function SeccionCompras() {
           </div>
 
           <div className="flex flex-col gap-1">
-            <label className={campoLabel}>Cantidad</label>
+            <label className={campoLabel}>
+              Cantidad{insumoSeleccionado ? ` (${insumoSeleccionado.unidad_compra})` : ''}
+            </label>
             <input
               type="number"
               min="0"
@@ -121,6 +128,13 @@ export default function SeccionCompras() {
             />
           </div>
         </div>
+
+        {totalEnUnidadUso !== null && (
+          <p className="rounded-lg bg-dorado-fondo px-3 py-2 text-sm text-texto">
+            Compraste {cantidad} {insumoSeleccionado.unidad_compra} = {totalEnUnidadUso}{' '}
+            {insumoSeleccionado.unidad} de stock
+          </p>
+        )}
 
         {error && <p className="text-sm text-red-600">{error}</p>}
 
@@ -148,7 +162,7 @@ export default function SeccionCompras() {
                 <div className="min-w-0">
                   <p className="truncate text-sm font-medium text-texto">{c.insumo.nombre}</p>
                   <p className="text-xs text-texto-secundario">
-                    {c.cantidad} {c.insumo.unidad} · {c.sede.nombre} ·{' '}
+                    {c.cantidad} {c.insumo.unidad_compra} · {c.sede.nombre} ·{' '}
                     {new Date(c.fecha).toLocaleDateString('es-CO', { day: 'numeric', month: 'short', year: 'numeric' })}
                   </p>
                 </div>

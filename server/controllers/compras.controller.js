@@ -1,7 +1,7 @@
 const prisma = require('../lib/prisma');
 
 const compraConRelaciones = {
-  insumo: { select: { nombre: true, unidad: true } },
+  insumo: { select: { nombre: true, unidad: true, unidad_compra: true } },
   sede: { select: { nombre: true } },
 };
 
@@ -49,6 +49,11 @@ async function crear(req, res) {
     return res.status(400).json({ error: 'El costo total debe ser un numero positivo' });
   }
 
+  // "cantidad" queda registrada en unidad_compra (ej. 1 paquete), pero el
+  // stock se lleva en unidad de uso (ej. toallas), asi que lo que se suma
+  // al stock_actual es cantidad x equivalencia, no la cantidad comprada tal cual.
+  const incrementoStock = cantidadNum * Number(insumo.equivalencia);
+
   const compra = await prisma.$transaction(async (tx) => {
     const nuevaCompra = await tx.compra.create({
       data: {
@@ -63,13 +68,13 @@ async function crear(req, res) {
 
     await tx.insumo.update({
       where: { id: insumo.id },
-      data: { stock_actual: { increment: cantidadNum } },
+      data: { stock_actual: { increment: incrementoStock } },
     });
 
     return nuevaCompra;
   });
 
-  res.status(201).json({ compra });
+  res.status(201).json({ compra, incrementoStock });
 }
 
 module.exports = { listar, crear };
