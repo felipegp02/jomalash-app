@@ -92,3 +92,31 @@ export function IconChevronRight(props) {
     </svg>
   );
 }
+
+export function IconAlerta(props) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M12 3.5 21 19.5H3L12 3.5Z" />
+      <path d="M12 10v4M12 16.5v.01" />
+    </svg>
+  );
+}
+
+export function IconMas(props) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M12 5v14M5 12h14" />
+    </svg>
+  );
+}
+
+export function IconPapelera(props) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M4 7h16" />
+      <path d="M9 7V4.5h6V7" />
+      <path d="M6 7l1 13h10l1-13" />
+      <path d="M10 11v6M14 11v6" />
+    </svg>
+  );
+}

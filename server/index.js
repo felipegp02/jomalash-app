@@ -10,6 +10,9 @@ const serviciosRoutes = require('./routes/servicios.routes');
 const usuariosRoutes = require('./routes/usuarios.routes');
 const sedesRoutes = require('./routes/sedes.routes');
 const dashboardRoutes = require('./routes/dashboard.routes');
+const insumosRoutes = require('./routes/insumos.routes');
+const comprasRoutes = require('./routes/compras.routes');
+const recetaRoutes = require('./routes/receta.routes');
 const errorHandler = require('./middleware/errorHandler');
 
 const app = express();
@@ -28,6 +31,9 @@ app.use('/servicios', serviciosRoutes);
 app.use('/usuarios', usuariosRoutes);
 app.use('/sedes', sedesRoutes);
 app.use('/dashboard', dashboardRoutes);
+app.use('/insumos', insumosRoutes);
+app.use('/compras', comprasRoutes);
+app.use('/receta', recetaRoutes);
 
 app.use((req, res) => {
   res.status(404).json({ error: 'Ruta no encontrada' });
