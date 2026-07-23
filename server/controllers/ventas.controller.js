@@ -4,6 +4,7 @@ const ventaConRelaciones = {
   servicio: { select: { nombre: true, categoria: true } },
   usuario: { select: { nombre: true } },
   sede: { select: { nombre: true } },
+  editadoPor: { select: { nombre: true } },
 };
 
 function toNumber(valor) {

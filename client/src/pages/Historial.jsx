@@ -46,7 +46,7 @@ export default function Historial() {
     [filtros.fechaDesde, filtros.fechaHasta],
   );
 
-  useEffect(() => {
+  function cargarVentas() {
     const params = new URLSearchParams({
       desde: rango.desde.toISOString(),
       hasta: rango.hasta.toISOString(),
@@ -60,9 +60,14 @@ export default function Historial() {
       .get(`/ventas?${params}`)
       .then((data) => setVentas(data.ventas))
       .finally(() => setCargando(false));
+  }
+
+  useEffect(
+    cargarVentas,
     // rango es un objeto nuevo en cada render; solo nos interesan sus valores.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [rango.desde.getTime(), rango.hasta.getTime(), filtros.sedeId, filtros.usuarioId, filtros.servicioId]);
+    [rango.desde.getTime(), rango.hasta.getTime(), filtros.sedeId, filtros.usuarioId, filtros.servicioId],
+  );
 
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-col gap-5">
@@ -82,7 +87,7 @@ export default function Historial() {
           <CardSkeleton alto="h-16" />
         </div>
       ) : (
-        <ListaMovimientos ventas={ventas} />
+        <ListaMovimientos ventas={ventas} esAdmin={esAdmin} onCambio={cargarVentas} />
       )}
     </div>
   );

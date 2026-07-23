@@ -6,6 +6,7 @@ import Registrar from './pages/Registrar';
 import Dashboard from './pages/Dashboard';
 import Historial from './pages/Historial';
 import Insumos from './pages/Insumos';
+import Gestion from './pages/Gestion';
 import Sidebar from './components/Sidebar';
 import BottomNav from './components/BottomNav';
 import Topbar from './components/Topbar';
@@ -17,6 +18,7 @@ const TITULOS = {
   registrar: 'Registrar venta',
   historial: 'Historial',
   insumos: 'Insumos',
+  gestion: 'Gestión',
 };
 
 function App() {
@@ -83,6 +85,8 @@ function App() {
           {paginaActual === 'historial' && <Historial />}
 
           {paginaActual === 'insumos' && usuario.rol === 'admin' && <Insumos />}
+
+          {paginaActual === 'gestion' && usuario.rol === 'admin' && <Gestion />}
         </main>
       </div>
 
