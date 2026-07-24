@@ -1,10 +1,12 @@
 import { useState } from 'react';
 import SeccionServicios from '../components/gestion/SeccionServicios';
 import SeccionEmpleadas from '../components/gestion/SeccionEmpleadas';
+import SeccionSedes from '../components/gestion/SeccionSedes';
 
 const SUBPESTANAS = [
   { id: 'servicios', etiqueta: 'Servicios' },
   { id: 'empleadas', etiqueta: 'Empleadas' },
+  { id: 'sedes', etiqueta: 'Sedes' },
 ];
 
 export default function Gestion() {
@@ -29,6 +31,7 @@ export default function Gestion() {
 
       {seccion === 'servicios' && <SeccionServicios />}
       {seccion === 'empleadas' && <SeccionEmpleadas />}
+      {seccion === 'sedes' && <SeccionSedes />}
     </div>
   );
 }
