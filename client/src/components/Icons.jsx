@@ -137,6 +137,47 @@ export function IconMas(props) {
   );
 }
 
+export function IconCaja(props) {
+  return (
+    <svg {...base} {...props}>
+      <rect x="3" y="7" width="18" height="13" rx="1.5" />
+      <path d="M3 11h18" />
+      <circle cx="12" cy="15" r="2" />
+      <path d="M8 7V6a4 4 0 0 1 8 0v1" />
+    </svg>
+  );
+}
+
+export function IconNomina(props) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M4 4.5h13l3 4-3 4H4v-8Z" />
+      <circle cx="9.5" cy="8.5" r="1.6" />
+      <path d="M4 12.5v7h13l3-4" />
+    </svg>
+  );
+}
+
+export function IconPuntos(props) {
+  return (
+    <svg {...base} {...props}>
+      <circle cx="5" cy="12" r="1.6" fill="currentColor" stroke="none" />
+      <circle cx="12" cy="12" r="1.6" fill="currentColor" stroke="none" />
+      <circle cx="19" cy="12" r="1.6" fill="currentColor" stroke="none" />
+    </svg>
+  );
+}
+
+export function IconSalir(props) {
+  return (
+    <svg {...base} {...props}>
+      <path d="M9 4H5.5A1.5 1.5 0 0 0 4 5.5v13A1.5 1.5 0 0 0 5.5 20H9" />
+      <path d="M15 16l4-4-4-4" />
+      <path d="M19 12H9" />
+    </svg>
+  );
+}
+
 export function IconPapelera(props) {
   return (
     <svg {...base} {...props}>
