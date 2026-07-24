@@ -1,4 +1,5 @@
 const prisma = require('../lib/prisma');
+const { costoPromedioInsumos, costoInsumosDeVentas } = require('../utils/costos');
 
 const MESES = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
 const DIAS = ['Lunes', 'Martes', 'Miercoles', 'Jueves', 'Viernes', 'Sabado', 'Domingo'];
@@ -36,8 +37,9 @@ function diaYHoraBogota(fecha) {
 function construirFiltrosComunes(req, query) {
   const filtros = {};
 
-  if (req.user.rol === 'empleada') {
-    // Aislamiento de datos: una empleada solo ve su propio desempeno.
+  if (!req.user.ve_dashboard_completo) {
+    // Aislamiento de datos: sin el permiso de dashboard completo, cada quien
+    // solo ve su propio desempeno (el default de una empleada recien creada).
     filtros.usuario_id = req.user.id;
   } else {
     if (query.usuario_id) filtros.usuario_id = Number(query.usuario_id);
@@ -50,7 +52,7 @@ function construirFiltrosComunes(req, query) {
 }
 
 function sedeEfectiva(req, query) {
-  if (req.user.rol === 'empleada') return req.user.sede_id;
+  if (!req.user.ve_dashboard_completo) return req.user.sede_id;
   return query.sede_id ? Number(query.sede_id) : null;
 }
 
@@ -70,47 +72,6 @@ function totalesDe(ventas) {
   const comisionTotal = ventas.reduce((suma, v) => suma + v.comision, 0);
   const ticketMedio = servicios ? Math.round(ventaBruta / servicios) : 0;
   return { servicios, ventaBruta, ticketMedio, comisionTotal };
-}
-
-// Costo promedio ponderado por unidad de cada insumo, a partir de todo su
-// historial de compras (no del periodo filtrado: es una tarifa de
-// valorizacion, no una metrica del rango de fechas seleccionado).
-async function costoPromedioInsumos() {
-  const compras = await prisma.compra.groupBy({
-    by: ['insumo_id'],
-    _sum: { costo_total: true, cantidad: true },
-  });
-
-  const mapa = new Map();
-  for (const c of compras) {
-    const cantidad = Number(c._sum.cantidad || 0);
-    const costoTotal = c._sum.costo_total || 0;
-    mapa.set(c.insumo_id, cantidad > 0 ? costoTotal / cantidad : 0);
-  }
-  return mapa;
-}
-
-// Costo de los insumos consumidos por un conjunto de ventas, segun la RECETA
-// de cada servicio realizado y el costo promedio de compra de cada insumo.
-async function costoInsumosDeVentas(ventas, costoPromedio) {
-  if (!ventas.length) return 0;
-
-  const conteoServicios = new Map();
-  for (const v of ventas) {
-    conteoServicios.set(v.servicio_id, (conteoServicios.get(v.servicio_id) || 0) + 1);
-  }
-
-  const recetas = await prisma.receta.findMany({
-    where: { servicio_id: { in: [...conteoServicios.keys()] } },
-  });
-
-  let costoTotal = 0;
-  for (const receta of recetas) {
-    const vecesRealizado = conteoServicios.get(receta.servicio_id) || 0;
-    const costoUnitario = costoPromedio.get(receta.insumo_id) || 0;
-    costoTotal += vecesRealizado * Number(receta.cantidad_usada) * costoUnitario;
-  }
-  return Math.round(costoTotal);
 }
 
 // Ganancia neta = venta bruta - comisiones pagadas - costo de insumos
@@ -161,7 +122,7 @@ async function calcularAvanceMeta(req, query) {
   const finMes = new Date(anio, mes, 1);
   const ventaWhere = { anulada: false, fecha: { gte: inicioMes, lt: finMes } };
   if (sedeId) ventaWhere.sede_id = sedeId;
-  if (req.user.rol === 'empleada') ventaWhere.usuario_id = req.user.id;
+  if (!req.user.ve_dashboard_completo) ventaWhere.usuario_id = req.user.id;
 
   const agregado = await prisma.venta.aggregate({ where: ventaWhere, _sum: { precio_total: true } });
   const ventaActual = agregado._sum.precio_total || 0;

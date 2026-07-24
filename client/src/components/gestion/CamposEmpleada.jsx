@@ -2,6 +2,17 @@ const campoLabel = 'text-sm font-medium text-texto-secundario';
 const campoInput =
   'rounded-xl border border-borde-tarjeta bg-white px-3 py-2 text-sm text-texto outline-none focus:border-dorado focus:ring-2 focus:ring-dorado/20';
 
+// Permisos finos, mas alla de admin/empleada (ver AUTH.md o
+// server/prisma/schema.prisma -> Usuario para el detalle de cada uno).
+const PERMISOS = [
+  { campo: 've_insumos', etiqueta: 'Ver Insumos' },
+  { campo: 've_nomina', etiqueta: 'Ver Nomina' },
+  { campo: 've_caja', etiqueta: 'Ver Caja' },
+  { campo: 've_dashboard_completo', etiqueta: 'Ver Dashboard completo' },
+  { campo: 'gestiona_catalogo', etiqueta: 'Gestionar catalogo (Servicios)' },
+  { campo: 'gestiona_empleadas', etiqueta: 'Gestionar empleadas' },
+];
+
 export default function CamposEmpleada({ valores, onChange, sedes, incluirPassword }) {
   function set(campo, valor) {
     onChange({ ...valores, [campo]: valor });
@@ -60,6 +71,23 @@ export default function CamposEmpleada({ valores, onChange, sedes, incluirPasswo
           className={campoInput}
           placeholder="Ej. 55"
         />
+      </div>
+
+      <div className="col-span-2 flex flex-col gap-2">
+        <label className={campoLabel}>Permisos</label>
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+          {PERMISOS.map((p) => (
+            <label key={p.campo} className="flex items-center gap-2 text-sm text-texto">
+              <input
+                type="checkbox"
+                checked={Boolean(valores[p.campo])}
+                onChange={(e) => set(p.campo, e.target.checked)}
+                className="h-4 w-4 rounded border-borde-tarjeta accent-dorado"
+              />
+              {p.etiqueta}
+            </label>
+          ))}
+        </div>
       </div>
     </div>
   );

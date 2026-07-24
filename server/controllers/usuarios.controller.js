@@ -1,6 +1,15 @@
 const bcrypt = require('bcryptjs');
 const prisma = require('../lib/prisma');
 
+const CAMPOS_PERMISOS = [
+  've_insumos',
+  've_nomina',
+  've_caja',
+  've_dashboard_completo',
+  'gestiona_catalogo',
+  'gestiona_empleadas',
+];
+
 function toNumber(valor) {
   if (valor === null || valor === undefined) return 0;
   return typeof valor === 'object' && typeof valor.toNumber === 'function'
@@ -9,7 +18,7 @@ function toNumber(valor) {
 }
 
 function usuarioSeguro(usuario) {
-  return {
+  const seguro = {
     id: usuario.id,
     nombre: usuario.nombre,
     rol: usuario.rol,
@@ -18,6 +27,21 @@ function usuarioSeguro(usuario) {
     email_recuperacion: usuario.email_recuperacion,
     porcentaje_comision: toNumber(usuario.porcentaje_comision),
   };
+  for (const campo of CAMPOS_PERMISOS) {
+    seguro[campo] = usuario[campo];
+  }
+  return seguro;
+}
+
+// Toma solo los permisos presentes en el body y los normaliza a boolean, para
+// poder usarlo tanto en crear (permisos ausentes = quedan en su default de
+// columna) como en actualizar (permisos ausentes = no se tocan).
+function permisosDelBody(body) {
+  const data = {};
+  for (const campo of CAMPOS_PERMISOS) {
+    if (body[campo] !== undefined) data[campo] = Boolean(body[campo]);
+  }
+  return data;
 }
 
 // GET /usuarios (Admin) - selector de empleada en Registrar, y pantalla de
@@ -78,6 +102,7 @@ async function crear(req, res) {
       porcentaje_comision: comisionNum,
       rol: 'empleada',
       activo: true,
+      ...permisosDelBody(req.body || {}),
     },
   });
 
@@ -125,6 +150,8 @@ async function actualizar(req, res) {
     }
     data.porcentaje_comision = comisionNum;
   }
+
+  Object.assign(data, permisosDelBody(req.body || {}));
 
   const usuario = await prisma.usuario.update({ where: { id }, data });
   res.json({ usuario: usuarioSeguro(usuario) });

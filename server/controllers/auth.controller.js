@@ -6,6 +6,15 @@ const { enviarCorreoRecuperacion } = require('../utils/mailer');
 
 const RESET_TOKEN_EXPIRES_MIN = Number(process.env.RESET_TOKEN_EXPIRES_MIN || 30);
 
+const CAMPOS_PERMISOS = [
+  've_insumos',
+  've_nomina',
+  've_caja',
+  've_dashboard_completo',
+  'gestiona_catalogo',
+  'gestiona_empleadas',
+];
+
 const cookieOptions = {
   httpOnly: true,
   secure: process.env.NODE_ENV === 'production',
@@ -22,13 +31,17 @@ function firmarToken(usuario) {
 }
 
 function usuarioSeguro(usuario) {
-  return {
+  const seguro = {
     id: usuario.id,
     nombre: usuario.nombre,
     rol: usuario.rol,
     sede_id: usuario.sede_id,
     sede: usuario.sede?.nombre,
   };
+  for (const campo of CAMPOS_PERMISOS) {
+    seguro[campo] = usuario[campo];
+  }
+  return seguro;
 }
 
 // POST /auth/login (RF-01)
@@ -160,4 +173,28 @@ async function me(req, res) {
   res.json({ usuario: usuarioSeguro(usuario) });
 }
 
-module.exports = { login, logout, recuperar, restablecer, me };
+// PUT /auth/password - "Mi cuenta": cualquier usuario logueado puede cambiar
+// su propia contrasena, con la contrasena actual como confirmacion.
+async function cambiarPassword(req, res) {
+  const { passwordActual, passwordNueva } = req.body || {};
+
+  if (!passwordActual || !passwordNueva) {
+    return res.status(400).json({ error: 'La contrasena actual y la nueva son requeridas' });
+  }
+  if (passwordNueva.length < 8) {
+    return res.status(400).json({ error: 'La nueva contrasena debe tener al menos 8 caracteres' });
+  }
+
+  const usuario = await prisma.usuario.findUnique({ where: { id: req.user.id } });
+  const passwordValido = await bcrypt.compare(passwordActual, usuario.password_hash);
+  if (!passwordValido) {
+    return res.status(401).json({ error: 'La contrasena actual no es correcta' });
+  }
+
+  const passwordHash = await bcrypt.hash(passwordNueva, 10);
+  await prisma.usuario.update({ where: { id: usuario.id }, data: { password_hash: passwordHash } });
+
+  res.json({ mensaje: 'Contrasena actualizada correctamente' });
+}
+
+module.exports = { login, logout, recuperar, restablecer, me, cambiarPassword };

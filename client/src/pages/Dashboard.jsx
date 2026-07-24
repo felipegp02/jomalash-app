@@ -54,7 +54,7 @@ function diaHoraFuerte(tiempo) {
 
 export default function Dashboard() {
   const { usuario } = useAuth();
-  const esAdmin = usuario.rol === 'admin';
+  const veCompleto = usuario.ve_dashboard_completo;
 
   const [sedes, setSedes] = useState([]);
   const [servicios, setServicios] = useState([]);
@@ -77,19 +77,20 @@ export default function Dashboard() {
   const [rankingEmpleadas, setRankingEmpleadas] = useState(null);
   const [cargando, setCargando] = useState(true);
 
-  // Una empleada solo ve su propio desempeno (siempre "modo individual");
-  // un admin entra en modo individual cuando elige una empleada puntual.
-  const modoIndividual = !esAdmin || filtros.usuarioId !== '';
-  const mostrarRankingsEquipo = esAdmin && filtros.usuarioId === '';
-  const mostrarDesgloseSedes = esAdmin && filtros.sedeId === '';
+  // Sin el permiso de dashboard completo, siempre es "modo individual" (solo
+  // el propio desempeno); con el permiso, se entra en modo individual solo
+  // al elegir una empleada puntual en el filtro.
+  const modoIndividual = !veCompleto || filtros.usuarioId !== '';
+  const mostrarRankingsEquipo = veCompleto && filtros.usuarioId === '';
+  const mostrarDesgloseSedes = veCompleto && filtros.sedeId === '';
 
   useEffect(() => {
     api.get('/servicios').then((data) => setServicios(data.servicios));
-    if (esAdmin) {
+    if (veCompleto) {
       api.get('/sedes').then((data) => setSedes(data.sedes));
       api.get('/usuarios?rol=empleada').then((data) => setEmpleadas(data.usuarios));
     }
-  }, [esAdmin]);
+  }, [veCompleto]);
 
   const rango = useMemo(
     () => calcularRango(filtros.periodo, filtros.fechaDesde, filtros.fechaHasta),
@@ -117,7 +118,7 @@ export default function Dashboard() {
       api.get(`/dashboard/servicios?${base}`).then((d) => setRankingServicios(d.ranking)),
     ];
 
-    if (esAdmin) {
+    if (veCompleto) {
       peticiones.push(
         api.get(`/dashboard/empleadas?${base}`).then((d) => setRankingEmpleadas(d.ranking)),
       );
@@ -126,12 +127,12 @@ export default function Dashboard() {
     Promise.all(peticiones).finally(() => setCargando(false));
     // rango es un objeto nuevo en cada render; solo nos interesan sus valores.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [rango.desde.getTime(), rango.hasta.getTime(), filtros.sedeId, filtros.servicioId, filtros.usuarioId, filtros.comparar, esAdmin]);
+  }, [rango.desde.getTime(), rango.hasta.getTime(), filtros.sedeId, filtros.servicioId, filtros.usuarioId, filtros.comparar, veCompleto]);
 
   const tendenciaVenta = useTendencia(filtros);
   const tendenciaServicios = useTendencia(filtros);
 
-  const empleadaSeleccionada = esAdmin
+  const empleadaSeleccionada = veCompleto
     ? empleadas.find((e) => String(e.id) === filtros.usuarioId)
     : null;
 

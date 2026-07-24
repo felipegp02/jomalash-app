@@ -5,7 +5,23 @@ import CardSkeleton from '../dashboard/CardSkeleton';
 import SinDatos from '../dashboard/SinDatos';
 import CamposEmpleada from './CamposEmpleada';
 
-const NUEVO_VACIO = { nombre: '', email_recuperacion: '', password: '', sede_id: '', porcentaje_comision: '' };
+const PERMISOS_VACIO = {
+  ve_insumos: false,
+  ve_nomina: false,
+  ve_caja: false,
+  ve_dashboard_completo: false,
+  gestiona_catalogo: false,
+  gestiona_empleadas: false,
+};
+
+const NUEVO_VACIO = {
+  nombre: '',
+  email_recuperacion: '',
+  password: '',
+  sede_id: '',
+  porcentaje_comision: '',
+  ...PERMISOS_VACIO,
+};
 
 export default function SeccionEmpleadas() {
   const [empleadas, setEmpleadas] = useState(null);
@@ -54,6 +70,7 @@ export default function SeccionEmpleadas() {
         password: nuevo.password,
         sede_id: Number(nuevo.sede_id),
         porcentaje_comision: Number(nuevo.porcentaje_comision || 0) / 100,
+        ...Object.fromEntries(Object.keys(PERMISOS_VACIO).map((campo) => [campo, nuevo[campo]])),
       });
       setNuevo(NUEVO_VACIO);
       setFormAbierto(false);
@@ -73,6 +90,7 @@ export default function SeccionEmpleadas() {
       password: '',
       sede_id: String(empleada.sede_id),
       porcentaje_comision: String(Math.round(empleada.porcentaje_comision * 100)),
+      ...Object.fromEntries(Object.keys(PERMISOS_VACIO).map((campo) => [campo, Boolean(empleada[campo])])),
     });
   }
 
@@ -84,6 +102,7 @@ export default function SeccionEmpleadas() {
         email_recuperacion: edicion.email_recuperacion,
         sede_id: Number(edicion.sede_id),
         porcentaje_comision: Number(edicion.porcentaje_comision || 0) / 100,
+        ...Object.fromEntries(Object.keys(PERMISOS_VACIO).map((campo) => [campo, edicion[campo]])),
       });
       setEditandoId(null);
       cargar();

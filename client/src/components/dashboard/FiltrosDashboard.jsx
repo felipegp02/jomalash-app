@@ -2,7 +2,7 @@ const selectClase =
   'rounded-xl border border-borde-tarjeta bg-white px-3 py-2 text-sm text-texto outline-none focus:border-dorado focus:ring-2 focus:ring-dorado/20';
 
 export default function FiltrosDashboard({ usuario, sedes, servicios, empleadas, filtros, onChange }) {
-  const esAdmin = usuario.rol === 'admin';
+  const veCompleto = usuario.ve_dashboard_completo;
 
   function actualizar(campo, valor) {
     onChange({ ...filtros, [campo]: valor });
@@ -39,7 +39,7 @@ export default function FiltrosDashboard({ usuario, sedes, servicios, empleadas,
         </div>
       )}
 
-      {esAdmin && (
+      {veCompleto && (
         <select
           value={filtros.sedeId}
           onChange={(e) => actualizar('sedeId', e.target.value)}
@@ -67,7 +67,7 @@ export default function FiltrosDashboard({ usuario, sedes, servicios, empleadas,
         ))}
       </select>
 
-      {esAdmin && (
+      {veCompleto && (
         <select
           value={filtros.usuarioId}
           onChange={(e) => actualizar('usuarioId', e.target.value)}

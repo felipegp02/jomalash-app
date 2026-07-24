@@ -31,6 +31,13 @@ async function main() {
       email_recuperacion: emailAdmin,
       porcentaje_comision: 0,
       activo: true,
+      // Un admin nace con todos los permisos finos en true.
+      ve_insumos: true,
+      ve_nomina: true,
+      ve_caja: true,
+      ve_dashboard_completo: true,
+      gestiona_catalogo: true,
+      gestiona_empleadas: true,
     },
   });
 

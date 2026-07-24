@@ -1,7 +1,7 @@
-import Avatar from './Avatar';
+import MenuAvatar from './MenuAvatar';
 import SedeSelector from './SedeSelector';
 
-export default function Topbar({ usuario, titulo, onLogout, sedes, sedeSeleccionada, onChangeSede }) {
+export default function Topbar({ usuario, titulo, onLogout, sedes, sedeSeleccionada, onChangeSede, onAbrirMiCuenta }) {
   return (
     <header className="border-b border-borde-tarjeta bg-white px-5 pb-5 pt-5">
       <div className="flex items-center justify-between md:hidden">
@@ -16,16 +16,7 @@ export default function Topbar({ usuario, titulo, onLogout, sedes, sedeSeleccion
             compacto
           />
         </div>
-        <div className="flex items-center gap-3">
-          <Avatar nombre={usuario.nombre} />
-          <button
-            type="button"
-            onClick={onLogout}
-            className="text-xs font-medium text-texto-secundario underline underline-offset-2 hover:text-texto"
-          >
-            Salir
-          </button>
-        </div>
+        <MenuAvatar usuario={usuario} onLogout={onLogout} onAbrirMiCuenta={onAbrirMiCuenta} compacto />
       </div>
 
       <div className="hidden items-center justify-between md:flex">
@@ -36,17 +27,7 @@ export default function Topbar({ usuario, titulo, onLogout, sedes, sedeSeleccion
           onChangeSede={onChangeSede}
         />
 
-        <div className="flex items-center gap-3">
-          <Avatar nombre={usuario.nombre} />
-          <span className="text-sm font-medium text-texto">{usuario.nombre}</span>
-          <button
-            type="button"
-            onClick={onLogout}
-            className="text-sm font-medium text-texto-secundario underline underline-offset-2 hover:text-texto"
-          >
-            Cerrar sesion
-          </button>
-        </div>
+        <MenuAvatar usuario={usuario} onLogout={onLogout} onAbrirMiCuenta={onAbrirMiCuenta} />
       </div>
 
       <h1 className="mt-4 text-3xl font-bold text-texto md:mt-5">{titulo}</h1>
