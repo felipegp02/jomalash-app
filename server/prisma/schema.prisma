@@ -30,6 +30,7 @@ model Sede {
   compras     Compra[]
   metas       Meta[]
   cierresCaja CierreCaja[]
+  pagosNomina PagoNomina[]
 
   @@map("SEDES")
 }
@@ -44,13 +45,26 @@ model Usuario {
   porcentaje_comision Decimal    @db.Decimal(4, 2)
   activo              Boolean    @default(true)
 
+  // Permisos finos, mas alla de admin/empleada: por defecto un admin nace
+  // con todos en true y una empleada con todos en false (ver seed.js y
+  // usuarios.controller.js). Permiten delegar capacidades puntuales (ej. ver
+  // Insumos) a una empleada sin darle el rol admin completo.
+  ve_insumos            Boolean @default(false)
+  ve_nomina             Boolean @default(false)
+  ve_caja               Boolean @default(false)
+  ve_dashboard_completo Boolean @default(false)
+  gestiona_catalogo     Boolean @default(false)
+  gestiona_empleadas    Boolean @default(false)
+
   sede Sede @relation(fields: [sede_id], references: [id])
 
-  ventasAtendidas  Venta[]              @relation("VentaUsuario")
-  ventasEditadas   Venta[]              @relation("VentaEditadoPor")
-  historialPrecios HistorialPrecio[]
-  cierresCaja      CierreCaja[]
-  resetTokens      PasswordResetToken[]
+  ventasAtendidas    Venta[]              @relation("VentaUsuario")
+  ventasEditadas     Venta[]              @relation("VentaEditadoPor")
+  historialPrecios   HistorialPrecio[]
+  cierresCaja        CierreCaja[]
+  resetTokens        PasswordResetToken[]
+  pagosNominaRecibidos   PagoNomina[] @relation("PagoNominaUsuario")
+  pagosNominaRegistrados PagoNomina[] @relation("PagoNominaRegistradoPor")
 
   @@map("USUARIOS")
 }
@@ -201,6 +215,40 @@ model CierreCaja {
 
   @@unique([sede_id, fecha])
   @@map("CIERRES_CAJA")
+}
+
+enum TipoPagoNomina {
+  vale
+  liquidacion
+}
+
+// Distinto del MetodoPago de VENTAS (que ademas admite tarjeta): un pago de
+// nomina en efectivo o transferencia directa a la empleada, sin datafono.
+enum MetodoPagoNomina {
+  efectivo
+  transferencia
+}
+
+model PagoNomina {
+  id             Int              @id @default(autoincrement())
+  usuario_id     Int
+  sede_id        Int
+  fecha          DateTime         @default(now())
+  tipo           TipoPagoNomina
+  monto          Int
+  metodo_pago    MetodoPagoNomina
+  // Solo tiene sentido para una liquidacion: que rango de trabajo cubre.
+  // Un vale es un adelanto puntual, no cubre un periodo.
+  periodo_inicio DateTime?        @db.Date
+  periodo_fin    DateTime?        @db.Date
+  nota           String?          @db.VarChar(200)
+  registrado_por Int
+
+  usuario       Usuario @relation("PagoNominaUsuario", fields: [usuario_id], references: [id])
+  sede          Sede    @relation(fields: [sede_id], references: [id])
+  registradoPor Usuario @relation("PagoNominaRegistradoPor", fields: [registrado_por], references: [id])
+
+  @@map("PAGOS_NOMINA")
 }
 
 // Tabla adicional no listada en la hoja "Modelo de Datos" del documento de

@@ -13,6 +13,10 @@ const dashboardRoutes = require('./routes/dashboard.routes');
 const insumosRoutes = require('./routes/insumos.routes');
 const comprasRoutes = require('./routes/compras.routes');
 const recetaRoutes = require('./routes/receta.routes');
+const cierresCajaRoutes = require('./routes/cierresCaja.routes');
+const metasRoutes = require('./routes/metas.routes');
+const reportesRoutes = require('./routes/reportes.routes');
+const nominaRoutes = require('./routes/nomina.routes');
 const errorHandler = require('./middleware/errorHandler');
 
 const app = express();
@@ -34,6 +38,10 @@ app.use('/dashboard', dashboardRoutes);
 app.use('/insumos', insumosRoutes);
 app.use('/compras', comprasRoutes);
 app.use('/receta', recetaRoutes);
+app.use('/cierres-caja', cierresCajaRoutes);
+app.use('/metas', metasRoutes);
+app.use('/reportes', reportesRoutes);
+app.use('/nomina', nominaRoutes);
 
 app.use((req, res) => {
   res.status(404).json({ error: 'Ruta no encontrada' });
