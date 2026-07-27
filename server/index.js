@@ -50,6 +50,11 @@ app.use((req, res) => {
 app.use(errorHandler);
 
 const PORT = process.env.PORT || 4000;
-app.listen(PORT, () => {
-  console.log(`Servidor Jomalash escuchando en el puerto ${PORT}`);
+// 0.0.0.0 por defecto (todas las interfaces), no localhost: en hosting
+// compartido el proxy interno (ej. Passenger en Hostinger) necesita poder
+// alcanzar el proceso desde afuera del propio proceso. Queda como variable
+// de entorno por si el proveedor exige un bind address especifico.
+const HOST = process.env.HOST || '0.0.0.0';
+app.listen(PORT, HOST, () => {
+  console.log(`Servidor Jomalash escuchando en ${HOST}:${PORT}`);
 });
