@@ -8,7 +8,7 @@ import SinDatos from './SinDatos';
 const OCULTAR_TOOLTIP_MS = 3000;
 
 // En touch no hay "hover": Chart.js solo dispara el tooltip mientras el dedo
-// esta sobre el canvas. Este hook lo deja visible unos segundos despues de
+// esta sobre el canvas. Este hook lo deja visible unos segundos después de
 // soltar (o hasta el siguiente toque), imitando lo que se ve en escritorio.
 function useTooltipTactil(chartRef) {
   const timeoutRef = useRef(null);
@@ -60,9 +60,9 @@ export default function ChartLinea({ etiquetas, datos, formatoValor = formatearM
         fill: true,
         tension: 0.3,
         pointBackgroundColor: COLOR_DORADO,
-        // Un punto visible solo en los dias/meses que tuvieron actividad.
+        // Un punto visible solo en los días/meses que tuvieron actividad.
         pointRadius: datos.map((d) => (d > 0 ? 4 : 0)),
-        // Radio de toque mas grande que el punto visible, para que sea facil
+        // Radio de toque mas grande que el punto visible, para que sea fácil
         // acertarle con el dedo en pantallas chicas.
         pointHitRadius: 14,
       },

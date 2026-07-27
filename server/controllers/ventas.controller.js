@@ -32,7 +32,7 @@ async function listar(req, res) {
 
   if (desde || hasta) {
     where.fecha = {};
-    // "hasta" se trata como limite exclusivo (igual que en /dashboard/*): el
+    // "hasta" se trata como límite exclusivo (igual que en /dashboard/*): el
     // caller debe mandar el inicio del dia siguiente para incluir el dia
     // completo, no una hora exacta que dejaria afuera casi todo ese dia.
     if (desde) where.fecha.gte = new Date(desde);
@@ -62,13 +62,13 @@ async function crear(req, res) {
 
   const servicio = await prisma.servicio.findUnique({ where: { id: Number(servicio_id) } });
   if (!servicio || !servicio.activo) {
-    return res.status(400).json({ error: 'Servicio invalido' });
+    return res.status(400).json({ error: 'Servicio inválido' });
   }
 
   let usuarioAtiende;
   if (req.user.rol === 'empleada') {
     // Una empleada solo puede registrar ventas propias: se ignora cualquier
-    // usuario_id que venga en el body y se usa el de su sesion.
+    // usuario_id que venga en el body y se usa el de su sesión.
     usuarioAtiende = await prisma.usuario.findUnique({ where: { id: req.user.id } });
   } else {
     const { usuario_id } = req.body || {};
@@ -79,7 +79,7 @@ async function crear(req, res) {
   }
 
   if (!usuarioAtiende || !usuarioAtiende.activo) {
-    return res.status(400).json({ error: 'Empleada invalida' });
+    return res.status(400).json({ error: 'Empleada inválida' });
   }
 
   // RF-05: la venta total se autocompleta desde el catalogo y es editable.
@@ -88,7 +88,7 @@ async function crear(req, res) {
     : Number(precio_total);
 
   if (!Number.isFinite(total) || total <= 0) {
-    return res.status(400).json({ error: 'El total de la venta debe ser un numero positivo' });
+    return res.status(400).json({ error: 'El total de la venta debe ser un número positivo' });
   }
 
   // RF-08 / RNF-03: la comision se calcula en el servidor, nunca se acepta desde el cliente.
@@ -96,14 +96,14 @@ async function crear(req, res) {
 
   const receta = await prisma.receta.findMany({ where: { servicio_id: servicio.id } });
 
-  // RNF-10: registrar la venta y descontar insumos es una sola transaccion atomica.
+  // RNF-10: registrar la venta y descontar insumos es una sola transacción atómica.
   const venta = await prisma.$transaction(async (tx) => {
     const nuevaVenta = await tx.venta.create({
       data: {
         servicio_id: servicio.id,
         usuario_id: usuarioAtiende.id,
         // RF-06: la sede se genera automaticamente, tomada de donde trabaja
-        // la empleada que atendio (no de la sesion de quien registra, ya que
+        // la empleada que atendio (no de la sesión de quien registra, ya que
         // un admin puede registrar por cualquiera de las dos sedes).
         sede_id: usuarioAtiende.sede_id,
         precio_total: total,
@@ -123,7 +123,7 @@ async function crear(req, res) {
     return nuevaVenta;
   });
 
-  // RF-07: resumen de confirmacion (servicio, empleada, total, hora) va incluido en la respuesta.
+  // RF-07: resumen de confirmación (servicio, empleada, total, hora) va incluido en la respuesta.
   res.status(201).json({ venta });
 }
 
@@ -141,12 +141,12 @@ async function actualizar(req, res) {
     return res.status(404).json({ error: 'Venta no encontrada' });
   }
   if (venta.anulada) {
-    return res.status(400).json({ error: 'La venta ya esta anulada' });
+    return res.status(400).json({ error: 'La venta ya está anulada' });
   }
 
   if (anulada) {
     if (!motivo) {
-      return res.status(400).json({ error: 'El motivo de anulacion es requerido' });
+      return res.status(400).json({ error: 'El motivo de anulación es requerido' });
     }
 
     const receta = await prisma.receta.findMany({ where: { servicio_id: venta.servicio_id } });
@@ -188,7 +188,7 @@ async function actualizar(req, res) {
   if (precio_total !== undefined && precio_total !== null && precio_total !== '') {
     const total = Number(precio_total);
     if (!Number.isFinite(total) || total <= 0) {
-      return res.status(400).json({ error: 'El total de la venta debe ser un numero positivo' });
+      return res.status(400).json({ error: 'El total de la venta debe ser un número positivo' });
     }
     data.precio_total = total;
     data.comision = Math.round(total * toNumber(venta.usuario.porcentaje_comision));

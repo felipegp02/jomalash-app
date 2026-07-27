@@ -58,7 +58,7 @@ export default function SeccionEmpleadas() {
     setError('');
 
     if (!nuevo.nombre || !nuevo.email_recuperacion || !nuevo.password || !nuevo.sede_id) {
-      setError('Nombre, correo, contrasena y sede son requeridos');
+      setError('Nombre, correo, contraseña y sede son requeridos');
       return;
     }
 

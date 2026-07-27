@@ -37,6 +37,7 @@ function usuarioSeguro(usuario) {
     rol: usuario.rol,
     sede_id: usuario.sede_id,
     sede: usuario.sede?.nombre,
+    debe_cambiar_password: usuario.debe_cambiar_password,
   };
   for (const campo of CAMPOS_PERMISOS) {
     seguro[campo] = usuario[campo];
@@ -49,7 +50,7 @@ async function login(req, res) {
   const { email, password } = req.body || {};
 
   if (!email || !password) {
-    return res.status(400).json({ error: 'Correo y contrasena son requeridos' });
+    return res.status(400).json({ error: 'Correo y contraseña son requeridos' });
   }
 
   const usuario = await prisma.usuario.findUnique({
@@ -57,14 +58,14 @@ async function login(req, res) {
     include: { sede: true },
   });
 
-  // Mensaje generico: no revelar si el correo existe o si fallo la contrasena.
+  // Mensaje genérico: no revelar si el correo existe o si fallo la contraseña.
   if (!usuario || !usuario.activo) {
-    return res.status(401).json({ error: 'Credenciales invalidas' });
+    return res.status(401).json({ error: 'Credenciales inválidas' });
   }
 
   const passwordValido = await bcrypt.compare(password, usuario.password_hash);
   if (!passwordValido) {
-    return res.status(401).json({ error: 'Credenciales invalidas' });
+    return res.status(401).json({ error: 'Credenciales inválidas' });
   }
 
   const token = firmarToken(usuario);
@@ -90,9 +91,9 @@ async function recuperar(req, res) {
     where: { email_recuperacion: email },
   });
 
-  // Misma respuesta exista o no el usuario, para no filtrar que correos estan registrados.
+  // Misma respuesta exista o no el usuario, para no filtrar que correos están registrados.
   const respuestaGenerica = {
-    mensaje: 'Si el correo esta registrado, se envio un enlace de recuperacion.',
+    mensaje: 'Si el correo está registrado, se envió un enlace de recuperación.',
   };
 
   if (!usuario || !usuario.activo) {
@@ -103,7 +104,7 @@ async function recuperar(req, res) {
   const expiraEn = new Date(Date.now() + RESET_TOKEN_EXPIRES_MIN * 60 * 1000);
 
   await prisma.$transaction([
-    // Invalida cualquier enlace de recuperacion previo sin usar (RNF-04: un solo uso).
+    // Invalida cualquier enlace de recuperación previo sin usar (RNF-04: un solo uso).
     prisma.passwordResetToken.updateMany({
       where: { usuario_id: usuario.id, usado: false },
       data: { usado: true },
@@ -127,11 +128,11 @@ async function restablecer(req, res) {
   const { token, password } = req.body || {};
 
   if (!token || !password) {
-    return res.status(400).json({ error: 'Token y nueva contrasena son requeridos' });
+    return res.status(400).json({ error: 'Token y nueva contraseña son requeridos' });
   }
 
   if (password.length < 8) {
-    return res.status(400).json({ error: 'La contrasena debe tener al menos 8 caracteres' });
+    return res.status(400).json({ error: 'La contraseña debe tener al menos 8 caracteres' });
   }
 
   const tokenHash = hashearToken(token);
@@ -140,7 +141,7 @@ async function restablecer(req, res) {
   });
 
   if (!registro) {
-    return res.status(400).json({ error: 'El enlace es invalido o ya expiro' });
+    return res.status(400).json({ error: 'El enlace es inválido o ya expiró' });
   }
 
   const passwordHash = await bcrypt.hash(password, 10);
@@ -148,7 +149,7 @@ async function restablecer(req, res) {
   await prisma.$transaction([
     prisma.usuario.update({
       where: { id: registro.usuario_id },
-      data: { password_hash: passwordHash },
+      data: { password_hash: passwordHash, debe_cambiar_password: false },
     }),
     prisma.passwordResetToken.update({
       where: { id: registro.id },
@@ -156,10 +157,10 @@ async function restablecer(req, res) {
     }),
   ]);
 
-  res.json({ mensaje: 'Contrasena actualizada correctamente' });
+  res.json({ mensaje: 'Contraseña actualizada correctamente' });
 }
 
-// GET /auth/me - util para que el frontend recupere la sesion activa al cargar
+// GET /auth/me - util para que el frontend recupere la sesión activa al cargar
 async function me(req, res) {
   const usuario = await prisma.usuario.findUnique({
     where: { id: req.user.id },
@@ -167,34 +168,37 @@ async function me(req, res) {
   });
 
   if (!usuario || !usuario.activo) {
-    return res.status(401).json({ error: 'Sesion invalida' });
+    return res.status(401).json({ error: 'Sesión inválida' });
   }
 
   res.json({ usuario: usuarioSeguro(usuario) });
 }
 
 // PUT /auth/password - "Mi cuenta": cualquier usuario logueado puede cambiar
-// su propia contrasena, con la contrasena actual como confirmacion.
+// su propia contraseña, con la contraseña actual como confirmación.
 async function cambiarPassword(req, res) {
   const { passwordActual, passwordNueva } = req.body || {};
 
   if (!passwordActual || !passwordNueva) {
-    return res.status(400).json({ error: 'La contrasena actual y la nueva son requeridas' });
+    return res.status(400).json({ error: 'La contraseña actual y la nueva son requeridas' });
   }
   if (passwordNueva.length < 8) {
-    return res.status(400).json({ error: 'La nueva contrasena debe tener al menos 8 caracteres' });
+    return res.status(400).json({ error: 'La nueva contraseña debe tener al menos 8 caracteres' });
   }
 
   const usuario = await prisma.usuario.findUnique({ where: { id: req.user.id } });
   const passwordValido = await bcrypt.compare(passwordActual, usuario.password_hash);
   if (!passwordValido) {
-    return res.status(401).json({ error: 'La contrasena actual no es correcta' });
+    return res.status(401).json({ error: 'La contraseña actual no es correcta' });
   }
 
   const passwordHash = await bcrypt.hash(passwordNueva, 10);
-  await prisma.usuario.update({ where: { id: usuario.id }, data: { password_hash: passwordHash } });
+  await prisma.usuario.update({
+    where: { id: usuario.id },
+    data: { password_hash: passwordHash, debe_cambiar_password: false },
+  });
 
-  res.json({ mensaje: 'Contrasena actualizada correctamente' });
+  res.json({ mensaje: 'Contraseña actualizada correctamente' });
 }
 
 module.exports = { login, logout, recuperar, restablecer, me, cambiarPassword };

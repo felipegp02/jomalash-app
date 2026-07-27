@@ -25,15 +25,15 @@ async function enviarCorreoRecuperacion(destinatario, tokenCrudo) {
   if (!transporte) {
     // Sin SMTP configurado (entorno local): se deja constancia en consola
     // para poder probar el flujo sin depender de un proveedor de correo.
-    console.log(`[mailer] SMTP no configurado. Enlace de recuperacion para ${destinatario}: ${enlace}`);
+    console.log(`[mailer] SMTP no configurado. Enlace de recuperación para ${destinatario}: ${enlace}`);
     return;
   }
 
   await transporte.sendMail({
     from: process.env.SMTP_FROM,
     to: destinatario,
-    subject: 'Recuperar contrasena - Jomalash',
-    text: `Solicitaste recuperar tu contrasena. Este enlace expira pronto y solo puede usarse una vez:\n\n${enlace}\n\nSi no fuiste tu, ignora este correo.`,
+    subject: 'Recuperar contraseña - Jomalash',
+    text: `Solicitaste recuperar tu contraseña. Este enlace expira pronto y solo puede usarse una vez:\n\n${enlace}\n\nSi no solicitaste esto, ignora este correo.`,
   });
 }
 

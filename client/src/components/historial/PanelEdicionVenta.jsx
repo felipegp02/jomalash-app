@@ -25,7 +25,7 @@ export default function PanelEdicionVenta({ venta, onGuardado, onCerrar }) {
     setError('');
     const totalNum = Number(total);
     if (!Number.isFinite(totalNum) || totalNum <= 0) {
-      setError('El total debe ser un numero positivo');
+      setError('El total debe ser un número positivo');
       return;
     }
 

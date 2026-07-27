@@ -168,7 +168,7 @@ export default function Dashboard() {
               etiqueta="Servicios del periodo"
               valor={resumen.servicios}
               actual={filtros.comparar ? resumen.servicios : null}
-              anterior={filtros.comparar ? resumen.comparacion?.servicios : null}
+              anterior={filtros.comparar ? resumen.comparación?.servicios : null}
             />
 
             {modoIndividual ? (
@@ -176,14 +176,14 @@ export default function Dashboard() {
                 etiqueta="Comision total"
                 valor={formatearMoneda(resumen.comisionTotal)}
                 actual={filtros.comparar ? resumen.comisionTotal : null}
-                anterior={filtros.comparar ? resumen.comparacion?.comisionTotal : null}
+                anterior={filtros.comparar ? resumen.comparación?.comisionTotal : null}
               />
             ) : (
               <KpiCard
                 etiqueta="Venta bruta"
                 valor={formatearMoneda(resumen.ventaBruta)}
                 actual={filtros.comparar ? resumen.ventaBruta : null}
-                anterior={filtros.comparar ? resumen.comparacion?.ventaBruta : null}
+                anterior={filtros.comparar ? resumen.comparación?.ventaBruta : null}
               />
             )}
 
@@ -191,14 +191,14 @@ export default function Dashboard() {
               etiqueta="Ticket medio"
               valor={formatearMoneda(resumen.ticketMedio)}
               actual={filtros.comparar ? resumen.ticketMedio : null}
-              anterior={filtros.comparar ? resumen.comparacion?.ticketMedio : null}
+              anterior={filtros.comparar ? resumen.comparación?.ticketMedio : null}
             />
 
             <KpiCard
               etiqueta="Ganancia neta"
               valor={formatearMoneda(resumen.gananciaNeta)}
               actual={filtros.comparar ? resumen.gananciaNeta : null}
-              anterior={filtros.comparar ? resumen.comparacion?.gananciaNeta : null}
+              anterior={filtros.comparar ? resumen.comparación?.gananciaNeta : null}
             >
               <div className="mt-1 flex flex-col gap-0.5 text-xs text-texto-secundario">
                 <p>Venta bruta: {formatearMoneda(resumen.ventaBruta)}</p>

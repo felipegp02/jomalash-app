@@ -38,7 +38,7 @@ function rangoDiaBogota(fecha) {
 
 // RF-22: snapshot fijo del dia, calculado con el mismo criterio de
 // "ganancia neta" que usa el Dashboard (venta bruta - comisiones - costo de
-// insumos consumidos), para que los numeros del cierre y del dashboard cuadren.
+// insumos consumidos), para que los números del cierre y del dashboard cuadren.
 async function calcularSnapshot(sedeId, fecha) {
   const { fechaColumna, inicio, fin } = rangoDiaBogota(fecha);
 
@@ -65,7 +65,7 @@ async function preview(req, res) {
   if (!sede_id) return res.status(400).json({ error: 'La sede es requerida' });
 
   const sede = await prisma.sede.findUnique({ where: { id: Number(sede_id) } });
-  if (!sede) return res.status(400).json({ error: 'Sede invalida' });
+  if (!sede) return res.status(400).json({ error: 'Sede inválida' });
 
   const snapshot = await calcularSnapshot(sede.id, fecha);
 
@@ -82,7 +82,7 @@ async function crear(req, res) {
   if (!sede_id) return res.status(400).json({ error: 'La sede es requerida' });
 
   const sede = await prisma.sede.findUnique({ where: { id: Number(sede_id) } });
-  if (!sede) return res.status(400).json({ error: 'Sede invalida' });
+  if (!sede) return res.status(400).json({ error: 'Sede inválida' });
 
   const snapshot = await calcularSnapshot(sede.id, fecha);
 
@@ -110,9 +110,9 @@ async function crear(req, res) {
       },
     });
   } catch (err) {
-    // Red de seguridad ante una condicion de carrera (dos cierres a la vez
+    // Red de seguridad ante una condición de carrera (dos cierres a la vez
     // para la misma sede y fecha): la unica fuente de verdad es la
-    // restriccion unique de la base de datos, no el pre-chequeo de arriba.
+    // restricción unique de la base de datos, no el pre-chequeo de arriba.
     if (err.code === 'P2002') {
       return res.status(400).json({ error: 'Ya existe un cierre de caja para esa sede y fecha' });
     }

@@ -31,9 +31,9 @@ const SERVICIOS = [
   { nombre: 'Jelly Spa con Pies Tradicional', categoria: 'Estética', precio: 56000 },
 ];
 
-// Clasificacion usada para armar las recetas condicionales. "Pies" incluye
+// Clasificación usada para armar las recetas condicionales. "Pies" incluye
 // Jelly Spa con Pies Tradicional ademas de Pedicure/Pies Semipermanente,
-// por el "con Pies" del nombre - es una suposicion mia, no algo que el
+// por el "con Pies" del nombre - es una suposición mía, no algo que el
 // usuario haya confirmado explicitamente.
 const PIES = new Set(['Pedicure', 'Pies Semipermanente', 'Jelly Spa con Pies Tradicional']);
 const MANOS = new Set([

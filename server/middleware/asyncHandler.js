@@ -1,5 +1,5 @@
 // Express 4 no reenvia automaticamente los rechazos de promesas (ni los throw
-// dentro de un handler async) a errorHandler; sin este wrapper la peticion
+// dentro de un handler async) a errorHandler; sin este wrapper la petición
 // se queda colgada en vez de responder con el error.
 function asyncHandler(fn) {
   return (req, res, next) => {

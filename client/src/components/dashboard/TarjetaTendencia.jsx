@@ -19,7 +19,7 @@ export default function TarjetaTendencia({
     <div className="rounded-[20px] border border-borde-tarjeta bg-white p-5 shadow-sm">
       <div className="mb-3 flex items-center justify-between gap-2">
         <h3 className="text-sm font-semibold text-texto">
-          {titulo} {vista === 'mensual' ? '(ultimos 6 meses)' : '(ultimos 30 dias)'}
+          {titulo} {vista === 'mensual' ? '(últimos 6 meses)' : '(últimos 30 días)'}
         </h3>
         <div className="flex shrink-0 gap-1 rounded-lg border border-borde-tarjeta bg-crema p-0.5">
           {OPCIONES.map((op) => (

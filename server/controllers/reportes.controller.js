@@ -7,12 +7,12 @@ const prisma = require('../lib/prisma');
 function formatearMoneda(valor) {
   const redondeado = Math.round(valor || 0);
   const signo = redondeado < 0 ? '-' : '';
-  const numero = new Intl.NumberFormat('es-CO', { maximumFractionDigits: 0 }).format(Math.abs(redondeado));
-  return `${signo}$${numero}`;
+  const número = new Intl.NumberFormat('es-CO', { maximumFractionDigits: 0 }).format(Math.abs(redondeado));
+  return `${signo}$${número}`;
 }
 
-// Sin auto-filtro por rol: llegar aqui ya exige el permiso ve_caja (una
-// herramienta de negocio a nivel de sede, no de desempeno individual), asi
+// Sin auto-filtro por rol: llegar aquí ya exige el permiso ve_caja (una
+// herramienta de negocio a nivel de sede, no de desempeno individual), así
 // que cualquiera que lo tenga puede elegir libremente que filtrar.
 function construirFiltros(req, query) {
   const filtros = {};
@@ -44,12 +44,12 @@ async function generarExcel(res, ventas, desde, hasta) {
     { header: 'Fecha', key: 'fecha', width: 14 },
     { header: 'Hora', key: 'hora', width: 10 },
     { header: 'Servicio', key: 'servicio', width: 30 },
-    { header: 'Categoria', key: 'categoria', width: 18 },
+    { header: 'Categoría', key: 'categoria', width: 18 },
     { header: 'Empleada', key: 'empleada', width: 20 },
     { header: 'Sede', key: 'sede', width: 14 },
     { header: 'Metodo de pago', key: 'metodo', width: 16 },
     { header: 'Total', key: 'total', width: 14 },
-    { header: 'Comision', key: 'comision', width: 14 },
+    { header: 'Comisión', key: 'comision', width: 14 },
   ];
   hoja.getRow(1).font = { bold: true };
 
@@ -104,7 +104,7 @@ function generarPdf(res, ventas, desde, hasta) {
     actual.venta += v.precio_total;
     porCategoria.set(cat, actual);
   }
-  doc.fontSize(13).text('Por categoria', { underline: true });
+  doc.fontSize(13).text('Por categoría', { underline: true });
   doc.fontSize(11);
   for (const [cat, datos] of porCategoria) {
     doc.text(`${cat}: ${datos.servicios} servicios - ${formatearMoneda(datos.venta)}`);

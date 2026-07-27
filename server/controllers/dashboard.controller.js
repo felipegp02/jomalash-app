@@ -2,7 +2,7 @@ const prisma = require('../lib/prisma');
 const { costoPromedioInsumos, costoInsumosDeVentas } = require('../utils/costos');
 
 const MESES = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
-const DIAS = ['Lunes', 'Martes', 'Miercoles', 'Jueves', 'Viernes', 'Sabado', 'Domingo'];
+const DIAS = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
 const MAPA_DIA_BOGOTA = { Mon: 0, Tue: 1, Wed: 2, Thu: 3, Fri: 4, Sat: 5, Sun: 6 };
 
 function requiereRango(query) {
@@ -16,7 +16,7 @@ function requiereRango(query) {
 }
 
 // Los servicios se registran desde el mostrador en Bogota; el servidor puede
-// correr en otra zona horaria (ej. UTC en el hosting), asi que el dia y la
+// correr en otra zona horaria (ej. UTC en el hosting), así que el dia y la
 // hora de cada venta se extraen siempre en America/Bogota, sin depender de
 // la zona horaria del proceso de Node.
 function diaYHoraBogota(fecha) {
@@ -146,16 +146,16 @@ async function resumen(req, res) {
   const porSede = porSedeDe(ventas);
   const porMetodoPago = porMetodoPagoDe(ventas);
 
-  let comparacion = null;
+  let comparación = null;
   if (req.query.comparar === 'true') {
     const duracion = hasta.getTime() - desde.getTime();
     const prevHasta = desde;
     const prevDesde = new Date(desde.getTime() - duracion);
     const prevVentas = await ventasEnRango(filtros, prevDesde, prevHasta);
-    comparacion = await totalesCompletos(prevVentas, costoPromedio);
+    comparación = await totalesCompletos(prevVentas, costoPromedio);
   }
 
-  res.json({ ...totales, avanceMeta, comparacion, porSede, porMetodoPago });
+  res.json({ ...totales, avanceMeta, comparación, porSede, porMetodoPago });
 }
 
 // GET /dashboard/tiempo
@@ -244,7 +244,7 @@ async function empleadasRanking(req, res) {
   res.json({ ranking });
 }
 
-// GET /dashboard/tendencia (venta de los ultimos 6 meses, o de los ultimos 30 dias)
+// GET /dashboard/tendencia (venta de los últimos 6 meses, o de los últimos 30 días)
 async function tendencia(req, res) {
   const filtros = construirFiltrosComunes(req, req.query);
   const granularidad = req.query.granularidad === 'diario' ? 'diario' : 'mensual';

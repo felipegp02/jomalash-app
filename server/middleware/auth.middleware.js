@@ -10,12 +10,12 @@ const CAMPOS_PERMISOS = [
   'gestiona_empleadas',
 ];
 
-// RF-01: mantiene la sesion activa via cookie httpOnly (Stack Tecnologico: JWT + cookie httpOnly).
+// RF-01: mantiene la sesión activa via cookie httpOnly (Stack Tecnologico: JWT + cookie httpOnly).
 // El JWT solo identifica al usuario (sub/rol/sede_id); rol y sede casi nunca
 // cambian en caliente, pero los permisos finos si (un admin puede activarlos
-// o desactivarlos en cualquier momento desde Ajustes), asi que se leen frescos
+// o desactivarlos en cualquier momento desde Ajustes), así que se leen frescos
 // de la base de datos en cada request en vez de confiar en lo firmado en el
-// token. Tambien permite cortar la sesion al instante si el usuario fue dado
+// token. También permite cortar la sesión al instante si el usuario fue dado
 // de baja (activo=false), sin esperar a que el token expire.
 async function authenticate(req, res, next) {
   const token = req.cookies?.token;
@@ -28,13 +28,13 @@ async function authenticate(req, res, next) {
   try {
     payload = jwt.verify(token, process.env.JWT_SECRET);
   } catch (err) {
-    return res.status(401).json({ error: 'Sesion invalida o expirada' });
+    return res.status(401).json({ error: 'Sesión inválida o expirada' });
   }
 
   try {
     const usuario = await prisma.usuario.findUnique({ where: { id: payload.sub } });
     if (!usuario || !usuario.activo) {
-      return res.status(401).json({ error: 'Sesion invalida o expirada' });
+      return res.status(401).json({ error: 'Sesión inválida o expirada' });
     }
 
     req.user = { id: usuario.id, rol: usuario.rol, sede_id: usuario.sede_id };
@@ -47,11 +47,11 @@ async function authenticate(req, res, next) {
   }
 }
 
-// RF-03: restringe vistas y acciones segun el rol (ej. authorize('admin')).
+// RF-03: restringe vistas y acciones según el rol (ej. authorize('admin')).
 function authorize(...rolesPermitidos) {
   return (req, res, next) => {
     if (!req.user || !rolesPermitidos.includes(req.user.rol)) {
-      return res.status(403).json({ error: 'No tienes permisos para esta accion' });
+      return res.status(403).json({ error: 'No tienes permisos para esta acción' });
     }
     next();
   };
@@ -59,13 +59,13 @@ function authorize(...rolesPermitidos) {
 
 // Permisos finos: requierePermiso('ve_insumos') exige que el usuario tenga
 // ese permiso en true (independiente de su rol). Con varios argumentos exige
-// todos (AND). El rol admin no tiene un atajo especial aqui a proposito: sus
-// permisos nacen todos en true (ver seed.js / backfill), asi que se comporta
-// igual que antes sin necesidad de una excepcion de codigo.
+// todos (AND). El rol admin no tiene un atajo especial aquí a proposito: sus
+// permisos nacen todos en true (ver seed.js / backfill), así que se comporta
+// igual que antes sin necesidad de una excepción de código.
 function requierePermiso(...permisos) {
   return (req, res, next) => {
     if (!req.user || !permisos.every((permiso) => req.user[permiso])) {
-      return res.status(403).json({ error: 'No tienes permisos para esta accion' });
+      return res.status(403).json({ error: 'No tienes permisos para esta acción' });
     }
     next();
   };
@@ -78,7 +78,7 @@ function requierePermiso(...permisos) {
 function requiereAlgunPermiso(...permisos) {
   return (req, res, next) => {
     if (!req.user || !permisos.some((permiso) => req.user[permiso])) {
-      return res.status(403).json({ error: 'No tienes permisos para esta accion' });
+      return res.status(403).json({ error: 'No tienes permisos para esta acción' });
     }
     next();
   };

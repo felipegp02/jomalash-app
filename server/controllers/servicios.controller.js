@@ -1,7 +1,7 @@
 const prisma = require('../lib/prisma');
 
 // GET /servicios (RF-05: catalogo para autocompletar el total de la venta).
-// Un admin gestionando el catalogo puede pedir tambien los desactivados
+// Un admin gestionando el catalogo puede pedir también los desactivados
 // con ?incluirInactivos=true; para cualquier otro uso (Registrar,
 // Dashboard, Historial) solo se listan los activos.
 async function listar(req, res) {
@@ -21,12 +21,12 @@ async function crear(req, res) {
   const { nombre, categoria, precio } = req.body || {};
 
   if (!nombre || !categoria) {
-    return res.status(400).json({ error: 'Nombre y categoria son requeridos' });
+    return res.status(400).json({ error: 'Nombre y categoría son requeridos' });
   }
 
   const precioNum = Number(precio);
   if (!Number.isFinite(precioNum) || precioNum <= 0) {
-    return res.status(400).json({ error: 'El precio debe ser un numero positivo' });
+    return res.status(400).json({ error: 'El precio debe ser un número positivo' });
   }
 
   const servicio = await prisma.servicio.create({
@@ -55,7 +55,7 @@ async function actualizar(req, res) {
   if (precio !== undefined && precio !== null && precio !== '') {
     precioNum = Number(precio);
     if (!Number.isFinite(precioNum) || precioNum <= 0) {
-      return res.status(400).json({ error: 'El precio debe ser un numero positivo' });
+      return res.status(400).json({ error: 'El precio debe ser un número positivo' });
     }
     data.precio = precioNum;
   }

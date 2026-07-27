@@ -12,7 +12,7 @@ import {
 // toca por el rediseno del BottomNav movil (ver enBarraMovil abajo, que
 // BottomNav.jsx usa para armar su propio orden fijo sin depender de este).
 export const PESTANAS = [
-  // destacado + separadorDespues: Registrar es la accion mas usada del dia a
+  // destacado + separadorDespues: Registrar es la acción mas usada del dia a
   // dia. En el sidebar de escritorio va sola arriba de todo con su propio
   // estilo; en movil (BottomNav) es el boton circular flotante.
   { id: 'registrar', etiqueta: 'Registrar', Icono: IconRegistrar, disponible: true, destacado: true, separadorDespues: true },

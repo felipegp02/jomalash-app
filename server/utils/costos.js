@@ -4,7 +4,7 @@ const prisma = require('../lib/prisma');
 // historial de compras (no del periodo filtrado: es una tarifa de
 // valorizacion, no una metrica del rango de fechas seleccionado).
 // Usado por el Dashboard y por el Cierre de Caja (Fase 7), que necesitan
-// el mismo criterio de "ganancia neta" para que los numeros cuadren entre si.
+// el mismo criterio de "ganancia neta" para que los números cuadren entre si.
 async function costoPromedioInsumos() {
   const compras = await prisma.compra.groupBy({
     by: ['insumo_id'],
@@ -20,7 +20,7 @@ async function costoPromedioInsumos() {
   return mapa;
 }
 
-// Costo de los insumos consumidos por un conjunto de ventas, segun la RECETA
+// Costo de los insumos consumidos por un conjunto de ventas, según la RECETA
 // de cada servicio realizado y el costo promedio de compra de cada insumo.
 async function costoInsumosDeVentas(ventas, costoPromedio) {
   if (!ventas.length) return 0;

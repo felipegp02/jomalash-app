@@ -31,7 +31,7 @@ Chart.register(
 
 // Paleta de marca Jomalash: dorado como color principal, gris y beige como
 // secundarios. Se mantiene dentro de la misma familia calida (sin morado
-// ni rosa) para los graficos con varias series/categorias.
+// ni rosa) para los gráficos con varias series/categorías.
 export const COLOR_DORADO = '#C9A227';
 export const COLOR_BEIGE = '#D9C48A';
 export const COLOR_GRIS = '#8a8378';

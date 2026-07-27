@@ -17,12 +17,12 @@ const NUEVO_VACIO = {
   stock_minimo: '',
 };
 
-// Pluralizacion simple en espanol: palabras terminadas en vocal suman "s"
+// Pluralización simple en español: palabras terminadas en vocal suman "s"
 // (frasco -> frascos), las que terminan en consonante suman "es" (unidad ->
 // unidades). Antes se le sumaba "s" a todo y "unidad" quedaba "unidads".
 function pluralizar(palabra) {
-  const ultima = palabra.trim().slice(-1).toLowerCase();
-  return 'aeiouáéíóú'.includes(ultima) ? `${palabra}s` : `${palabra}es`;
+  const última = palabra.trim().slice(-1).toLowerCase();
+  return 'aeiouáéíóú'.includes(última) ? `${palabra}s` : `${palabra}es`;
 }
 
 // "gramos" se abrevia a "g" en pantalla (igual que "ml" ya es abreviatura);

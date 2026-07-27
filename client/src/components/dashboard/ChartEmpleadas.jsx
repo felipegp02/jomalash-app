@@ -4,7 +4,7 @@ import { COLOR_DORADO, COLOR_TEXTO, COLOR_BORDE } from '../../charts/setup';
 import { formatearMoneda } from '../../utils/formato';
 import SinDatos from './SinDatos';
 
-// valor: 'comision' o 'venta' o 'servicios' segun que se quiera graficar
+// valor: 'comision' o 'venta' o 'servicios' según que se quiera graficar
 export default function ChartEmpleadas({ ranking, valor = 'comision', esMoneda = true }) {
   if (!ranking.length) return <SinDatos />;
 

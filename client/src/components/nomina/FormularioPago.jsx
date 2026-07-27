@@ -6,7 +6,7 @@ const campoInput =
 
 const TIPOS = [
   { valor: 'vale', etiqueta: 'Vale' },
-  { valor: 'liquidacion', etiqueta: 'Liquidacion' },
+  { valor: 'liquidacion', etiqueta: 'Liquidación' },
 ];
 
 const METODOS_PAGO = [
@@ -30,7 +30,7 @@ export default function FormularioPago({ usuarioId, sedeId, onGuardado, onCancel
 
     const montoNum = Number(monto);
     if (!Number.isFinite(montoNum) || montoNum <= 0) {
-      setError('El monto debe ser un numero positivo');
+      setError('El monto debe ser un número positivo');
       return;
     }
 

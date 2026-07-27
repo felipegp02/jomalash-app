@@ -19,11 +19,11 @@ export default function ModalMiCuenta({ usuario, onCerrar }) {
     setExito(false);
 
     if (passwordNueva.length < 8) {
-      setError('La nueva contrasena debe tener al menos 8 caracteres');
+      setError('La nueva contraseña debe tener al menos 8 caracteres');
       return;
     }
     if (passwordNueva !== confirmarNueva) {
-      setError('Las contrasenas nuevas no coinciden');
+      setError('Las contraseñas nuevas no coinciden');
       return;
     }
 
@@ -64,10 +64,10 @@ export default function ModalMiCuenta({ usuario, onCerrar }) {
         </div>
 
         <form onSubmit={handleGuardar} className="mt-4 flex flex-col gap-3 border-t border-borde-tarjeta pt-4">
-          <h3 className="text-sm font-semibold text-texto">Cambiar contrasena</h3>
+          <h3 className="text-sm font-semibold text-texto">Cambiar contraseña</h3>
 
           <div className="flex flex-col gap-1">
-            <label className="text-xs font-medium text-texto-secundario">Contrasena actual</label>
+            <label className="text-xs font-medium text-texto-secundario">Contraseña actual</label>
             <input
               type="password"
               value={passwordActual}
@@ -77,7 +77,7 @@ export default function ModalMiCuenta({ usuario, onCerrar }) {
           </div>
 
           <div className="flex flex-col gap-1">
-            <label className="text-xs font-medium text-texto-secundario">Nueva contrasena</label>
+            <label className="text-xs font-medium text-texto-secundario">Nueva contraseña</label>
             <input
               type="password"
               value={passwordNueva}
@@ -88,7 +88,7 @@ export default function ModalMiCuenta({ usuario, onCerrar }) {
           </div>
 
           <div className="flex flex-col gap-1">
-            <label className="text-xs font-medium text-texto-secundario">Confirmar nueva contrasena</label>
+            <label className="text-xs font-medium text-texto-secundario">Confirmar nueva contraseña</label>
             <input
               type="password"
               value={confirmarNueva}
@@ -98,14 +98,14 @@ export default function ModalMiCuenta({ usuario, onCerrar }) {
           </div>
 
           {error && <p className="text-sm text-red-600">{error}</p>}
-          {exito && !error && <p className="text-sm text-verde">Contrasena actualizada correctamente.</p>}
+          {exito && !error && <p className="text-sm text-verde">Contraseña actualizada correctamente.</p>}
 
           <button
             type="submit"
             disabled={guardando}
             className="self-start rounded-lg bg-dorado px-4 py-2 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-60"
           >
-            {guardando ? 'Guardando...' : 'Actualizar contrasena'}
+            {guardando ? 'Guardando...' : 'Actualizar contraseña'}
           </button>
         </form>
       </div>

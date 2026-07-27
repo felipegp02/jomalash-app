@@ -1,7 +1,7 @@
 // Correcciones puntuales al catalogo de insumos: modelo de "Esmalte"
 // (quedo con datos viejos de prueba en unidades en vez de ml), unidad de
 // compra de Algodon, y stock_minimo real de cada insumo (arrancaron en 0,
-// asi que la alerta de bajo stock nunca se disparaba).
+// así que la alerta de bajo stock nunca se disparaba).
 require('dotenv').config();
 const prisma = require('../lib/prisma');
 

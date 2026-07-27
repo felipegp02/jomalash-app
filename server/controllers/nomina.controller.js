@@ -5,10 +5,10 @@ const TIPOS_PAGO = ['vale', 'liquidacion'];
 const METODOS_PAGO = ['efectivo', 'transferencia'];
 
 // GET /nomina/resumen?mes=&anio=&sede_id= (Admin)
-// Una tarjeta por empleada: dias trabajados, comision ganada (de VENTAS),
+// Una tarjeta por empleada: días trabajados, comisión ganada (de VENTAS),
 // vales y liquidaciones entregados en el mes, y saldo pendiente = ganado -
 // vales - liquidaciones. Vales/liquidaciones se cuentan por su fecha de
-// pago (no por el periodo que una liquidacion diga cubrir): la tarjeta del
+// pago (no por el periodo que una liquidación diga cubrir): la tarjeta del
 // mes muestra lo realmente entregado ese mes.
 async function resumen(req, res) {
   const mes = Number(req.query.mes);
@@ -71,7 +71,7 @@ async function resumen(req, res) {
   res.json({ empleadas: resultado });
 }
 
-// POST /nomina (Admin) - registra un vale o una liquidacion.
+// POST /nomina (Admin) - registra un vale o una liquidación.
 async function crear(req, res) {
   const { usuario_id, sede_id, tipo, monto, metodo_pago, periodo_inicio, periodo_fin, nota } =
     req.body || {};
@@ -88,17 +88,17 @@ async function crear(req, res) {
 
   const montoNum = Number(monto);
   if (!Number.isFinite(montoNum) || montoNum <= 0) {
-    return res.status(400).json({ error: 'El monto debe ser un numero positivo' });
+    return res.status(400).json({ error: 'El monto debe ser un número positivo' });
   }
 
   const empleada = await prisma.usuario.findUnique({ where: { id: Number(usuario_id) } });
   if (!empleada || empleada.rol !== 'empleada') {
-    return res.status(400).json({ error: 'Empleada invalida' });
+    return res.status(400).json({ error: 'Empleada inválida' });
   }
 
   const sede = await prisma.sede.findUnique({ where: { id: Number(sede_id) } });
   if (!sede) {
-    return res.status(400).json({ error: 'Sede invalida' });
+    return res.status(400).json({ error: 'Sede inválida' });
   }
 
   const data = {
@@ -123,7 +123,7 @@ async function crear(req, res) {
 }
 
 // GET /nomina/:usuarioId/historial?desde=&hasta= (Admin)
-// Sin desde/hasta trae TODO el historial de la empleada, sin limite de
+// Sin desde/hasta trae TODO el historial de la empleada, sin límite de
 // fecha: el filtro es opcional, no un rango por defecto.
 async function historial(req, res) {
   const usuarioId = Number(req.params.usuarioId);

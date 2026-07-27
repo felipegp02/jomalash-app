@@ -7,10 +7,10 @@ import SinDatos from '../dashboard/SinDatos';
 const campoInput =
   'rounded-xl border border-borde-tarjeta bg-white px-3 py-2 text-sm text-texto outline-none focus:border-dorado focus:ring-2 focus:ring-dorado/20';
 
-const ETIQUETA_TIPO = { vale: 'Vale', liquidacion: 'Liquidacion' };
+const ETIQUETA_TIPO = { vale: 'Vale', liquidacion: 'Liquidación' };
 const ETIQUETA_METODO = { efectivo: 'Efectivo', transferencia: 'Transferencia' };
 
-// Historial completo de la empleada (sin limite de fecha): trae todo una
+// Historial completo de la empleada (sin límite de fecha): trae todo una
 // sola vez al expandir, y el filtro de rango se aplica en el navegador
 // sobre esos mismos datos, sin volver a pedirle nada al servidor.
 export default function HistorialPagos({ usuarioId, refrescarTrigger }) {

@@ -13,7 +13,7 @@ const TIPOS_MEDIDA = [
   { valor: 'unidades', etiqueta: 'Unidades' },
 ];
 
-// Campos compartidos entre el alta y la edicion de un insumo. Un consumible
+// Campos compartidos entre el alta y la edición de un insumo. Un consumible
 // necesita tipo_medida y contenido_por_compra (se compra en una presentacion
 // y se gasta en otra, ej. un frasco de 15ml); una herramienta no, se cuenta
 // siempre en unidades enteras.

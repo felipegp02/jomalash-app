@@ -45,7 +45,7 @@ function permisosDelBody(body) {
 }
 
 // GET /usuarios (Admin) - selector de empleada en Registrar, y pantalla de
-// gestion de empleadas (con ?incluirInactivos=true para ver tambien las
+// gestión de empleadas (con ?incluirInactivos=true para ver también las
 // dadas de baja).
 async function listar(req, res) {
   const { sede_id, rol, incluirInactivos } = req.query;
@@ -63,27 +63,27 @@ async function listar(req, res) {
   res.json({ usuarios: usuarios.map(usuarioSeguro) });
 }
 
-// POST /usuarios (RF-13: alta de empleada, define su % de comision).
-// Siempre crea rol "empleada": esta pantalla es de gestion de empleadas,
+// POST /usuarios (RF-13: alta de empleada, define su % de comisión).
+// Siempre crea rol "empleada": esta pantalla es de gestión de empleadas,
 // no de administradores.
 async function crear(req, res) {
   const { nombre, email_recuperacion, password, sede_id, porcentaje_comision } = req.body || {};
 
   if (!nombre || !email_recuperacion || !password || !sede_id) {
-    return res.status(400).json({ error: 'Nombre, correo, contrasena y sede son requeridos' });
+    return res.status(400).json({ error: 'Nombre, correo, contraseña y sede son requeridos' });
   }
   if (password.length < 8) {
-    return res.status(400).json({ error: 'La contrasena debe tener al menos 8 caracteres' });
+    return res.status(400).json({ error: 'La contraseña debe tener al menos 8 caracteres' });
   }
 
   const comisionNum = porcentaje_comision === undefined || porcentaje_comision === '' ? 0 : Number(porcentaje_comision);
   if (!Number.isFinite(comisionNum) || comisionNum < 0 || comisionNum > 1) {
-    return res.status(400).json({ error: 'El porcentaje de comision debe estar entre 0 y 1' });
+    return res.status(400).json({ error: 'El porcentaje de comisión debe estar entre 0 y 1' });
   }
 
   const sede = await prisma.sede.findUnique({ where: { id: Number(sede_id) } });
   if (!sede) {
-    return res.status(400).json({ error: 'Sede invalida' });
+    return res.status(400).json({ error: 'Sede inválida' });
   }
 
   const existente = await prisma.usuario.findUnique({ where: { email_recuperacion } });
@@ -109,7 +109,7 @@ async function crear(req, res) {
   res.status(201).json({ usuario: usuarioSeguro(usuario) });
 }
 
-// PUT /usuarios/:id (RF-13: editar datos, % de comision, o dar de baja).
+// PUT /usuarios/:id (RF-13: editar datos, % de comisión, o dar de baja).
 // Limitado a empleadas: esta pantalla no administra otras cuentas admin.
 async function actualizar(req, res) {
   const id = Number(req.params.id);
@@ -130,7 +130,7 @@ async function actualizar(req, res) {
   if (sede_id !== undefined) {
     const sede = await prisma.sede.findUnique({ where: { id: Number(sede_id) } });
     if (!sede) {
-      return res.status(400).json({ error: 'Sede invalida' });
+      return res.status(400).json({ error: 'Sede inválida' });
     }
     data.sede_id = sede.id;
   }
@@ -138,7 +138,7 @@ async function actualizar(req, res) {
   if (email_recuperacion !== undefined && email_recuperacion !== existente.email_recuperacion) {
     const enUso = await prisma.usuario.findUnique({ where: { email_recuperacion } });
     if (enUso) {
-      return res.status(400).json({ error: 'Ese correo ya esta en uso por otro usuario' });
+      return res.status(400).json({ error: 'Ese correo ya está en uso por otro usuario' });
     }
     data.email_recuperacion = email_recuperacion;
   }
@@ -146,7 +146,7 @@ async function actualizar(req, res) {
   if (porcentaje_comision !== undefined) {
     const comisionNum = Number(porcentaje_comision);
     if (!Number.isFinite(comisionNum) || comisionNum < 0 || comisionNum > 1) {
-      return res.status(400).json({ error: 'El porcentaje de comision debe estar entre 0 y 1' });
+      return res.status(400).json({ error: 'El porcentaje de comisión debe estar entre 0 y 1' });
     }
     data.porcentaje_comision = comisionNum;
   }

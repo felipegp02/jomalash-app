@@ -50,7 +50,7 @@ export default function SeccionMetas({ sedes, sedeSeleccionada }) {
     setExito(false);
     const num = Number(metaVenta);
     if (!Number.isFinite(num) || num <= 0) {
-      setError('La meta de venta debe ser un numero positivo');
+      setError('La meta de venta debe ser un número positivo');
       return;
     }
 

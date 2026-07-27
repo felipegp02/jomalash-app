@@ -40,7 +40,7 @@ export default function MenuAvatar({ usuario, onLogout, onAbrirMiCuenta, compact
             }}
             className="block w-full rounded-lg px-3 py-2 text-left text-sm text-texto hover:bg-crema"
           >
-            Cerrar sesion
+            Cerrar sesión
           </button>
         </div>
       )}

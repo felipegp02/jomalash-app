@@ -6,7 +6,7 @@ const campoInput =
 
 // Carga o corrige el stock real de cada insumo de una sola vez. A
 // diferencia de una compra, esto no queda registrado en el historial de
-// compras: es solo una foto del stock real (para arrancar con numeros
+// compras: es solo una foto del stock real (para arrancar con números
 // reales, o para corregir un conteo).
 export default function AjusteInventario({ insumos, onCerrar, onGuardado }) {
   const [valores, setValores] = useState(() =>

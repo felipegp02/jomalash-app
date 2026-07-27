@@ -44,6 +44,9 @@ model Usuario {
   email_recuperacion  String     @unique @db.VarChar(120)
   porcentaje_comision Decimal    @db.Decimal(4, 2)
   activo              Boolean    @default(true)
+  // Fuerza el flujo de "cambiar contrasena" en el proximo login (usado al
+  // dar de alta una cuenta con contrasena temporal, ej. RNF de despliegue).
+  debe_cambiar_password Boolean  @default(false)
 
   // Permisos finos, mas alla de admin/empleada: por defecto un admin nace
   // con todos en true y una empleada con todos en false (ver seed.js y

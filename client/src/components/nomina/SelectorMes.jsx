@@ -5,7 +5,7 @@ const MESES = [
   'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre',
 ];
 
-// Navegacion libre hacia atras (y hacia adelante): no hay limite de cuantos
+// Navegación libre hacia atrás (y hacia adelante): no hay límite de cuántos
 // meses se puede retroceder, para poder consultar cualquier periodo pasado.
 export default function SelectorMes({ mes, anio, onCambiar }) {
   function retroceder() {

@@ -3,6 +3,7 @@ import { useAuth } from './context/AuthContext';
 import { api } from './api/client';
 import { puedeVerPestana } from './components/navegacion';
 import Login from './pages/Login';
+import CambiarPasswordObligatorio from './pages/CambiarPasswordObligatorio';
 import Registrar from './pages/Registrar';
 import Dashboard from './pages/Dashboard';
 import Historial from './pages/Historial';
@@ -55,6 +56,10 @@ function App() {
 
   if (!usuario) {
     return <Login />;
+  }
+
+  if (usuario.debe_cambiar_password) {
+    return <CambiarPasswordObligatorio />;
   }
 
   return (

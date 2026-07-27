@@ -6,7 +6,7 @@ import PanelMas from './PanelMas';
 const ORDEN_BARRA_MOVIL = ['dashboard', 'historial', 'insumos'];
 
 // Patron inspirado en Nequi: pocas pestanas fijas + un boton central
-// flotante para la accion mas usada (Registrar) + "Mas" para el resto, en
+// flotante para la acción mas usada (Registrar) + "Mas" para el resto, en
 // vez de amontonar 7 iconos parejos en una sola fila.
 export default function BottomNav({ usuario, paginaActual, onNavegar, onAbrirMiCuenta, onLogout }) {
   const [masAbierto, setMasAbierto] = useState(false);

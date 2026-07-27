@@ -70,7 +70,7 @@ export default function SeccionServicios() {
     e.preventDefault();
     setError('');
     if (!nuevo.nombre || !nuevo.categoria || !nuevo.precio) {
-      setError('Nombre, categoria y precio son requeridos');
+      setError('Nombre, categoría y precio son requeridos');
       return;
     }
 

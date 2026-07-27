@@ -45,22 +45,22 @@ async function crear(req, res) {
 
   const minimo = Number(stock_minimo);
   if (!Number.isFinite(minimo) || minimo < 0) {
-    return res.status(400).json({ error: 'El stock minimo debe ser un numero valido' });
+    return res.status(400).json({ error: 'El stock minimo debe ser un número valido' });
   }
 
   const inicial = stock_actual === undefined || stock_actual === null || stock_actual === '' ? 0 : Number(stock_actual);
   if (!Number.isFinite(inicial) || inicial < 0) {
-    return res.status(400).json({ error: 'El stock inicial debe ser un numero valido' });
+    return res.status(400).json({ error: 'El stock inicial debe ser un número valido' });
   }
 
-  // Para herramientas la compra siempre es 1 a 1 (unidades enteras, sin conversion).
+  // Para herramientas la compra siempre es 1 a 1 (unidades enteras, sin conversión).
   let contenido = 1;
   if (tipoFinal === 'consumible') {
     contenido = contenido_por_compra === undefined || contenido_por_compra === null || contenido_por_compra === ''
       ? 1
       : Number(contenido_por_compra);
     if (!Number.isFinite(contenido) || contenido <= 0) {
-      return res.status(400).json({ error: 'El contenido por compra debe ser un numero positivo' });
+      return res.status(400).json({ error: 'El contenido por compra debe ser un número positivo' });
     }
   }
 
@@ -122,7 +122,7 @@ async function actualizar(req, res) {
   if (stock_minimo !== undefined) {
     const minimo = Number(stock_minimo);
     if (!Number.isFinite(minimo) || minimo < 0) {
-      return res.status(400).json({ error: 'El stock minimo debe ser un numero valido' });
+      return res.status(400).json({ error: 'El stock minimo debe ser un número valido' });
     }
     data.stock_minimo = minimo;
   }
@@ -130,7 +130,7 @@ async function actualizar(req, res) {
   if (contenido_por_compra !== undefined && tipoFinal === 'consumible') {
     const contenido = Number(contenido_por_compra);
     if (!Number.isFinite(contenido) || contenido <= 0) {
-      return res.status(400).json({ error: 'El contenido por compra debe ser un numero positivo' });
+      return res.status(400).json({ error: 'El contenido por compra debe ser un número positivo' });
     }
     data.contenido_por_compra = contenido;
   }
@@ -139,7 +139,7 @@ async function actualizar(req, res) {
   res.json({ insumo: conAlerta(insumo) });
 }
 
-// PUT /insumos/:id/inventario (inventario inicial / correccion manual: no
+// PUT /insumos/:id/inventario (inventario inicial / corrección manual: no
 // queda registrado como compra, solo fija el stock real).
 async function ajustarInventario(req, res) {
   const id = Number(req.params.id);
@@ -152,7 +152,7 @@ async function ajustarInventario(req, res) {
 
   const valor = Number(stock_actual);
   if (!Number.isFinite(valor) || valor < 0) {
-    return res.status(400).json({ error: 'El stock debe ser un numero valido' });
+    return res.status(400).json({ error: 'El stock debe ser un número valido' });
   }
 
   const insumo = await prisma.insumo.update({ where: { id }, data: { stock_actual: valor } });

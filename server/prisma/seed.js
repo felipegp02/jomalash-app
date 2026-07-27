@@ -63,14 +63,14 @@ async function main() {
   });
 
   // Servicio + insumo + receta de ejemplo (mismos nombres usados como ejemplo
-  // en la hoja "Modelo de Datos"), para poder probar el descuento automatico
+  // en la hoja "Modelo de Datos"), para poder probar el descuento automático
   // de insumos al registrar una venta.
   const servicio = await prisma.servicio.upsert({
     where: { id: 1 },
     update: {},
     create: {
       nombre: 'Manicure Semipermanente',
-      categoria: 'Unas',
+      categoria: 'Uñas',
       precio: 45000,
       activo: true,
     },
@@ -97,8 +97,8 @@ async function main() {
   }
 
   console.log('Seed completado: sedes, admin, empleada de prueba, y un servicio con receta de ejemplo.');
-  console.log(`Admin    -> correo: ${emailAdmin} | contrasena: ${passwordAdmin}`);
-  console.log(`Empleada -> correo: ${emailEmpleada} | contrasena: ${passwordEmpleada}`);
+  console.log(`Admin    -> correo: ${emailAdmin} | contraseña: ${passwordAdmin}`);
+  console.log(`Empleada -> correo: ${emailEmpleada} | contraseña: ${passwordEmpleada}`);
 }
 
 main()

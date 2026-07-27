@@ -31,35 +31,35 @@ async function crear(req, res) {
 
   const insumo = await prisma.insumo.findUnique({ where: { id: Number(insumo_id) } });
   if (!insumo) {
-    return res.status(400).json({ error: 'Insumo invalido' });
+    return res.status(400).json({ error: 'Insumo inválido' });
   }
 
   const sede = await prisma.sede.findUnique({ where: { id: Number(sede_id) } });
   if (!sede) {
-    return res.status(400).json({ error: 'Sede invalida' });
+    return res.status(400).json({ error: 'Sede inválida' });
   }
 
   const cantidadNum = Number(cantidad);
   if (!Number.isFinite(cantidadNum) || cantidadNum <= 0) {
-    return res.status(400).json({ error: 'La cantidad debe ser un numero positivo' });
+    return res.status(400).json({ error: 'La cantidad debe ser un número positivo' });
   }
 
   // Las herramientas se compran y se cuentan en unidades enteras, sin
-  // conversion (RF nuevo del modulo de insumos: "solo suma unidades enteras
-  // al stock, sin conversion").
+  // conversión (RF nuevo del modulo de insumos: "solo suma unidades enteras
+  // al stock, sin conversión").
   if (insumo.tipo === 'herramienta' && !Number.isInteger(cantidadNum)) {
     return res.status(400).json({ error: 'Las herramientas se compran en unidades enteras' });
   }
 
   const costoNum = Number(costo_total);
   if (!Number.isFinite(costoNum) || costoNum <= 0) {
-    return res.status(400).json({ error: 'El costo total debe ser un numero positivo' });
+    return res.status(400).json({ error: 'El costo total debe ser un número positivo' });
   }
 
   // "cantidad" queda registrada en unidad_compra (ej. 1 paquete), pero el
-  // stock de un consumible se lleva en su unidad de uso (ej. ml), asi que
+  // stock de un consumible se lleva en su unidad de uso (ej. ml), así que
   // lo que se suma al stock_actual es cantidad x contenido_por_compra, no
-  // la cantidad comprada tal cual. Las herramientas no tienen conversion.
+  // la cantidad comprada tal cual. Las herramientas no tienen conversión.
   const incrementoStock =
     insumo.tipo === 'herramienta' ? cantidadNum : cantidadNum * Number(insumo.contenido_por_compra);
 

@@ -5,7 +5,7 @@ async function request(path, options = {}) {
     method: options.method || 'GET',
     headers: options.body ? { 'Content-Type': 'application/json' } : undefined,
     body: options.body ? JSON.stringify(options.body) : undefined,
-    // La sesion viaja en una cookie httpOnly (JWT), por eso hace falta
+    // La sesión viaja en una cookie httpOnly (JWT), por eso hace falta
     // enviar credenciales en cada request al backend.
     credentials: 'include',
   });

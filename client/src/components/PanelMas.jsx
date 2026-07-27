@@ -3,8 +3,8 @@ import { PESTANAS } from './navegacion';
 import { IconPersona, IconSalir, IconX } from './Icons';
 
 // Hoja deslizable desde abajo con lo que no entra en la barra fija: las
-// pestanas restantes segun permiso (Caja/Nomina/Ajustes) mas las acciones de
-// cuenta (Mi cuenta / Cerrar sesion), que no son "paginas" de PESTANAS.
+// pestanas restantes según permiso (Caja/Nomina/Ajustes) mas las acciones de
+// cuenta (Mi cuenta / Cerrar sesión), que no son "paginas" de PESTANAS.
 export default function PanelMas({ usuario, onNavegar, onAbrirMiCuenta, onLogout, onCerrar }) {
   const [visible, setVisible] = useState(false);
 

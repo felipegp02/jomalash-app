@@ -23,7 +23,7 @@ function agruparPorDia(ventas) {
 }
 
 function FilaMovimiento({ venta, esAdmin, expandido, onToggle, onCambio }) {
-  // RF-09: solo Admin puede editar/anular, y solo si la venta no esta ya
+  // RF-09: solo Admin puede editar/anular, y solo si la venta no está ya
   // anulada. Una venta anulada igual se puede expandir para ver quien la
   // anulo y por que (RNF-11: trazabilidad visible, no solo guardada).
   const puedeExpandir = venta.anulada || esAdmin;

@@ -18,7 +18,7 @@ function Fila({ etiqueta, valor, destacado }) {
 }
 
 // RF-22: cierre de caja diario, snapshot fijo que no cambia si se edita una
-// venta despues. Solo se puede cerrar una vez por sede y por dia.
+// venta después. Solo se puede cerrar una vez por sede y por dia.
 export default function SeccionCierre({ sedes, sedeSeleccionada }) {
   const [sedeId, setSedeId] = useState(sedeSeleccionada || sedes[0]?.id || '');
   const [preview, setPreview] = useState(null);

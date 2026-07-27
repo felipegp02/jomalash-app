@@ -15,7 +15,7 @@ export default function CamposServicio({ valores, onChange }) {
       </div>
 
       <div className="flex flex-col gap-1">
-        <label className={campoLabel}>Categoria</label>
+        <label className={campoLabel}>Categoría</label>
         <input
           value={valores.categoria}
           onChange={(e) => set('categoria', e.target.value)}

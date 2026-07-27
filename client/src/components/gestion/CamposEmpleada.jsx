@@ -2,14 +2,14 @@ const campoLabel = 'text-sm font-medium text-texto-secundario';
 const campoInput =
   'rounded-xl border border-borde-tarjeta bg-white px-3 py-2 text-sm text-texto outline-none focus:border-dorado focus:ring-2 focus:ring-dorado/20';
 
-// Permisos finos, mas alla de admin/empleada (ver AUTH.md o
+// Permisos finos, más allá de admin/empleada (ver AUTH.md o
 // server/prisma/schema.prisma -> Usuario para el detalle de cada uno).
 const PERMISOS = [
   { campo: 've_insumos', etiqueta: 'Ver Insumos' },
-  { campo: 've_nomina', etiqueta: 'Ver Nomina' },
+  { campo: 've_nomina', etiqueta: 'Ver Nómina' },
   { campo: 've_caja', etiqueta: 'Ver Caja' },
   { campo: 've_dashboard_completo', etiqueta: 'Ver Dashboard completo' },
-  { campo: 'gestiona_catalogo', etiqueta: 'Gestionar catalogo (Servicios)' },
+  { campo: 'gestiona_catalogo', etiqueta: 'Gestionar catálogo (Servicios)' },
   { campo: 'gestiona_empleadas', etiqueta: 'Gestionar empleadas' },
 ];
 

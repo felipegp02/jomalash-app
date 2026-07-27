@@ -31,11 +31,11 @@ async function definir(req, res) {
     return res.status(400).json({ error: 'El mes debe estar entre 1 y 12' });
   }
   if (!Number.isFinite(metaNum) || metaNum <= 0) {
-    return res.status(400).json({ error: 'La meta de venta debe ser un numero positivo' });
+    return res.status(400).json({ error: 'La meta de venta debe ser un número positivo' });
   }
 
   const sede = await prisma.sede.findUnique({ where: { id: Number(sede_id) } });
-  if (!sede) return res.status(400).json({ error: 'Sede invalida' });
+  if (!sede) return res.status(400).json({ error: 'Sede inválida' });
 
   const meta = await prisma.meta.upsert({
     where: { sede_id_mes_anio: { sede_id: sede.id, mes: mesNum, anio: anioNum } },
