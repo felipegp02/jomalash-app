@@ -1,5 +1,10 @@
 generator client {
-  provider = "prisma-client-js"
+  provider   = "prisma-client-js"
+  // "binary" en vez del default "library": el engine "library" (.node nativo
+  // en proceso) tiene un bug conocido de Prisma (PANIC: timer has gone away)
+  // en hosting compartido tipo cPanel/Hostinger. El engine "binary" corre
+  // como proceso aparte y evita ese panic.
+  engineType = "binary"
 }
 
 datasource db {
