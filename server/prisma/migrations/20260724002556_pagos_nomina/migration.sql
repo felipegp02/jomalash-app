@@ -1,5 +1,5 @@
 -- AlterTable
-ALTER TABLE `insumos` ALTER COLUMN `unidad_compra` DROP DEFAULT;
+ALTER TABLE `INSUMOS` ALTER COLUMN `unidad_compra` DROP DEFAULT;
 
 -- CreateTable
 CREATE TABLE `PAGOS_NOMINA` (
