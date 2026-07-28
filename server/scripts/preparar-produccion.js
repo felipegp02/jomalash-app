@@ -48,17 +48,12 @@ async function main() {
   if (!castilla) throw new Error('No existe la sede Castilla');
 
   // 1) Cuentas admin reales, con contraseña temporal y flag de cambio obligatorio.
+  // upsert en los tres casos: crea la cuenta si no existe (ej. produccion,
+  // recien migrada) o solo le actualiza password+permisos si ya existia
+  // (ej. local, donde Camila es la cuenta de siempre desde el seed inicial).
   await upsertAdmin('Felipe', 'felipegp02@gmail.com', castilla.id);
   await upsertAdmin('Administración General', 'admin@jomalash.com', castilla.id);
-
-  // Camila queda como admin (decisión explicita del negocio), pero también
-  // con la contraseña temporal para forzarla a definir la suya propia.
-  const passwordCamila = await bcrypt.hash(PASSWORD_TEMPORAL, 10);
-  await prisma.usuario.update({
-    where: { email_recuperacion: 'camila@jomalash.com' },
-    data: { password_hash: passwordCamila, debe_cambiar_password: true },
-  });
-  console.log('Camila Caballero: contraseña temporal actualizada.');
+  await upsertAdmin('Camila Caballero', 'camila@jomalash.com', castilla.id);
 
   // 2) Borrar datos de prueba: ventas (todas, son ficticias) y la compra de
   // prueba (revirtiendo su efecto en el stock antes de borrarla).
