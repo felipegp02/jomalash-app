@@ -1,14 +1,28 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { api } from '../api/client';
 
-// RF-02: pide el correo y dispara el envio del enlace de recuperacion. La
-// respuesta del backend es siempre el mismo mensaje generico (exista o no el
-// correo), asi que este componente no necesita distinguir los casos.
+// RF-02: elige el correo (de las cuentas admin activas, traidas del backend)
+// y dispara el envio del enlace de recuperacion. La respuesta del backend es
+// siempre el mismo mensaje generico (exista o no el correo), asi que este
+// componente no necesita distinguir los casos.
 export default function Recuperar({ onVolver }) {
+  const [cuentas, setCuentas] = useState([]);
+  const [cargandoCuentas, setCargandoCuentas] = useState(true);
   const [email, setEmail] = useState('');
   const [enviando, setEnviando] = useState(false);
   const [error, setError] = useState('');
   const [mensaje, setMensaje] = useState('');
+
+  useEffect(() => {
+    api
+      .get('/auth/cuentas-recuperables')
+      .then((data) => {
+        setCuentas(data.cuentas);
+        if (data.cuentas.length) setEmail(data.cuentas[0].email_recuperacion);
+      })
+      .catch(() => setError('No se pudo cargar la lista de cuentas'))
+      .finally(() => setCargandoCuentas(false));
+  }, []);
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -46,24 +60,31 @@ export default function Recuperar({ onVolver }) {
             <form onSubmit={handleSubmit} className="flex flex-col gap-4">
               <div className="flex flex-col gap-1.5">
                 <label htmlFor="email" className="text-sm font-medium text-texto-secundario">
-                  Correo
+                  Cuenta
                 </label>
-                <input
+                <select
                   id="email"
-                  type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  autoComplete="username"
+                  disabled={cargandoCuentas || !cuentas.length}
                   required
                   className="rounded-xl border border-borde-tarjeta bg-white px-4 py-3 text-texto outline-none focus:border-dorado focus:ring-2 focus:ring-dorado/20"
-                />
+                >
+                  {cargandoCuentas && <option value="">Cargando...</option>}
+                  {!cargandoCuentas && !cuentas.length && <option value="">No hay cuentas disponibles</option>}
+                  {cuentas.map((c) => (
+                    <option key={c.email_recuperacion} value={c.email_recuperacion}>
+                      {c.nombre} — {c.email_recuperacion}
+                    </option>
+                  ))}
+                </select>
               </div>
 
               {error && <p className="text-sm text-red-600">{error}</p>}
 
               <button
                 type="submit"
-                disabled={enviando}
+                disabled={enviando || cargandoCuentas || !cuentas.length}
                 className="rounded-xl bg-dorado py-3 text-base font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-60"
               >
                 {enviando ? 'Enviando...' : 'Enviar enlace'}

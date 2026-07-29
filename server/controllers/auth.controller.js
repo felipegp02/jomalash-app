@@ -79,6 +79,19 @@ async function logout(req, res) {
   res.status(204).send();
 }
 
+// GET /auth/cuentas-recuperables - lista de correos admin activos para el
+// selector de "Recuperar contraseña" (pantalla previa al login, sin sesión).
+// Solo nombre+correo: nada mas de la cuenta se expone sin autenticar.
+async function cuentasRecuperables(req, res) {
+  const cuentas = await prisma.usuario.findMany({
+    where: { rol: 'admin', activo: true },
+    select: { nombre: true, email_recuperacion: true },
+    orderBy: { nombre: 'asc' },
+  });
+
+  res.json({ cuentas });
+}
+
 // POST /auth/recuperar (RF-02)
 async function recuperar(req, res) {
   const { email } = req.body || {};
@@ -201,4 +214,4 @@ async function cambiarPassword(req, res) {
   res.json({ mensaje: 'Contraseña actualizada correctamente' });
 }
 
-module.exports = { login, logout, recuperar, restablecer, me, cambiarPassword };
+module.exports = { login, logout, cuentasRecuperables, recuperar, restablecer, me, cambiarPassword };
