@@ -29,6 +29,21 @@ app.use(cookieParser());
 
 app.get('/health', (req, res) => res.json({ status: 'ok' }));
 
+// DIAGNOSTICO TEMPORAL: solo para averiguar la IP publica de salida del
+// servidor y poder agregarla a la whitelist de MySQL remoto en Hostinger.
+// Sacar esta ruta despues de usarla.
+app.get('/diagnostico/ip', async (req, res) => {
+  try {
+    const respuesta = await fetch('https://api.ipify.org?format=json');
+    const datos = await respuesta.json();
+    console.log('[diagnostico] IP de salida del servidor:', datos.ip);
+    res.json(datos);
+  } catch (err) {
+    console.error('[diagnostico] Error obteniendo la IP:', err);
+    res.status(500).json({ error: 'No se pudo obtener la IP de salida' });
+  }
+});
+
 app.use('/auth', authRoutes);
 app.use('/ventas', ventasRoutes);
 app.use('/servicios', serviciosRoutes);
