@@ -21,6 +21,12 @@ const errorHandler = require('./middleware/errorHandler');
 
 const app = express();
 
+// Hostinger pone un proxy interno (Passenger) delante del proceso: sin esto
+// req.ip devuelve siempre la IP del proxy, no la del cliente real, y el
+// rate limiter de /auth/login terminaria compartiendo un solo cupo entre
+// todos los usuarios.
+app.set('trust proxy', 1);
+
 // RNF-09: la app vive en un subdominio separado (app.jomalash.com), por eso
 // CORS solo permite el origen del frontend, con credenciales para la cookie httpOnly.
 app.use(cors({ origin: process.env.CLIENT_URL, credentials: true }));
@@ -75,6 +81,15 @@ app.get('/diagnostico/db-url', (req, res) => {
       ultimos5: JSON.stringify(valorCrudo.slice(-5)),
     });
   }
+});
+
+// DIAGNOSTICO TEMPORAL: confirma que JWT_SECRET en produccion tiene el mismo
+// largo que el valor de referencia generado localmente, sin exponer el
+// secreto. Sacar esta ruta (junto con /diagnostico/ip y /diagnostico/db-url)
+// apenas quede confirmado.
+app.get('/diagnostico/jwt-secret-largo', (req, res) => {
+  const valor = process.env.JWT_SECRET || '';
+  res.json({ longitud: valor.length, definida: valor.length > 0 });
 });
 
 app.use('/auth', authRoutes);
