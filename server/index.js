@@ -35,63 +35,6 @@ app.use(cookieParser());
 
 app.get('/health', (req, res) => res.json({ status: 'ok' }));
 
-// DIAGNOSTICO TEMPORAL: solo para averiguar la IP publica de salida del
-// servidor y poder agregarla a la whitelist de MySQL remoto en Hostinger.
-// Sacar esta ruta despues de usarla.
-app.get('/diagnostico/ip', async (req, res) => {
-  try {
-    const respuesta = await fetch('https://api.ipify.org?format=json');
-    const datos = await respuesta.json();
-    console.log('[diagnostico] IP de salida del servidor:', datos.ip);
-    res.json(datos);
-  } catch (err) {
-    console.error('[diagnostico] Error obteniendo la IP:', err);
-    res.status(500).json({ error: 'No se pudo obtener la IP de salida' });
-  }
-});
-
-// DIAGNOSTICO TEMPORAL: parsea DATABASE_URL y devuelve cada parte tal cual
-// (usuario, host, puerto, base) menos la contraseña, reemplazada por
-// asteriscos del mismo largo real. Si el parseo falla, devuelve el detalle
-// crudo (largo total + primeros/ultimos caracteres escapados) para poder
-// detectar comillas/espacios/saltos de linea colados en el panel de
-// Hostinger. Sacar esta ruta despues de usarla.
-app.get('/diagnostico/db-url', (req, res) => {
-  const valorCrudo = process.env.DATABASE_URL || '';
-
-  try {
-    const url = new URL(valorCrudo);
-    const password = decodeURIComponent(url.password);
-
-    res.json({
-      protocol: url.protocol.replace(':', ''),
-      user: decodeURIComponent(url.username),
-      password: '*'.repeat(password.length),
-      host: url.hostname,
-      port: url.port,
-      database: url.pathname.replace(/^\//, ''),
-      longitudCruda: valorCrudo.length,
-    });
-  } catch (err) {
-    res.status(500).json({
-      error: 'No se pudo parsear DATABASE_URL',
-      mensaje: err.message,
-      longitudCruda: valorCrudo.length,
-      primeros15: JSON.stringify(valorCrudo.slice(0, 15)),
-      ultimos5: JSON.stringify(valorCrudo.slice(-5)),
-    });
-  }
-});
-
-// DIAGNOSTICO TEMPORAL: confirma que JWT_SECRET en produccion tiene el mismo
-// largo que el valor de referencia generado localmente, sin exponer el
-// secreto. Sacar esta ruta (junto con /diagnostico/ip y /diagnostico/db-url)
-// apenas quede confirmado.
-app.get('/diagnostico/jwt-secret-largo', (req, res) => {
-  const valor = process.env.JWT_SECRET || '';
-  res.json({ longitud: valor.length, definida: valor.length > 0 });
-});
-
 app.use('/auth', authRoutes);
 app.use('/ventas', ventasRoutes);
 app.use('/servicios', serviciosRoutes);
