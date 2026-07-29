@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
+import Recuperar from './Recuperar';
 
 export default function Login() {
   const { login } = useAuth();
@@ -7,6 +8,11 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [enviando, setEnviando] = useState(false);
+  const [recuperando, setRecuperando] = useState(false);
+
+  if (recuperando) {
+    return <Recuperar onVolver={() => setRecuperando(false)} />;
+  }
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -71,6 +77,14 @@ export default function Login() {
             className="mt-2 rounded-xl bg-dorado py-3 text-base font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-60"
           >
             {enviando ? 'Ingresando...' : 'Ingresar'}
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setRecuperando(true)}
+            className="text-sm font-medium text-texto-secundario underline underline-offset-2 hover:text-texto"
+          >
+            ¿Olvidaste tu contraseña?
           </button>
         </form>
       </div>

@@ -3,6 +3,7 @@ import { useAuth } from './context/AuthContext';
 import { api } from './api/client';
 import { puedeVerPestana } from './components/navegacion';
 import Login from './pages/Login';
+import Restablecer from './pages/Restablecer';
 import CambiarPasswordObligatorio from './pages/CambiarPasswordObligatorio';
 import Registrar from './pages/Registrar';
 import Dashboard from './pages/Dashboard';
@@ -45,6 +46,13 @@ function App() {
       api.get('/sedes').then((data) => setSedes(data.sedes));
     }
   }, [usuario]);
+
+  // El enlace de recuperacion de contraseña ("olvidaste tu contraseña")
+  // apunta a esta ruta y debe funcionar este o no logueado; se chequea
+  // antes que cualquier otra cosa, sin esperar a saber quien esta logueado.
+  if (window.location.pathname === '/restablecer') {
+    return <Restablecer />;
+  }
 
   if (cargando) {
     return (

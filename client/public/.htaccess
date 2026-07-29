@@ -1,0 +1,9 @@
+# SPA: rutas como /restablecer no existen como archivo fisico, hay que
+# devolver index.html y dejar que React lea la URL (ver App.jsx).
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteRule . /index.html [L]
+</IfModule>
