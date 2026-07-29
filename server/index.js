@@ -44,19 +44,37 @@ app.get('/diagnostico/ip', async (req, res) => {
   }
 });
 
-// DIAGNOSTICO TEMPORAL: para detectar comillas/espacios/saltos de linea que
-// se hayan colado al guardar DATABASE_URL en el panel de Hostinger. Nunca
-// devuelve la contraseña: solo los primeros 15 y ultimos 5 caracteres del
-// valor crudo (la password queda en el medio, oculta), con JSON.stringify
-// para que cualquier caracter invisible se vea escapado explicitamente.
-// Sacar esta ruta despues de usarla.
+// DIAGNOSTICO TEMPORAL: parsea DATABASE_URL y devuelve cada parte tal cual
+// (usuario, host, puerto, base) menos la contraseña, reemplazada por
+// asteriscos del mismo largo real. Si el parseo falla, devuelve el detalle
+// crudo (largo total + primeros/ultimos caracteres escapados) para poder
+// detectar comillas/espacios/saltos de linea colados en el panel de
+// Hostinger. Sacar esta ruta despues de usarla.
 app.get('/diagnostico/db-url', (req, res) => {
-  const valor = process.env.DATABASE_URL || '';
-  res.json({
-    longitud: valor.length,
-    primeros15: JSON.stringify(valor.slice(0, 15)),
-    ultimos5: JSON.stringify(valor.slice(-5)),
-  });
+  const valorCrudo = process.env.DATABASE_URL || '';
+
+  try {
+    const url = new URL(valorCrudo);
+    const password = decodeURIComponent(url.password);
+
+    res.json({
+      protocol: url.protocol.replace(':', ''),
+      user: decodeURIComponent(url.username),
+      password: '*'.repeat(password.length),
+      host: url.hostname,
+      port: url.port,
+      database: url.pathname.replace(/^\//, ''),
+      longitudCruda: valorCrudo.length,
+    });
+  } catch (err) {
+    res.status(500).json({
+      error: 'No se pudo parsear DATABASE_URL',
+      mensaje: err.message,
+      longitudCruda: valorCrudo.length,
+      primeros15: JSON.stringify(valorCrudo.slice(0, 15)),
+      ultimos5: JSON.stringify(valorCrudo.slice(-5)),
+    });
+  }
 });
 
 app.use('/auth', authRoutes);
