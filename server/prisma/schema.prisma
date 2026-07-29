@@ -175,6 +175,10 @@ model Receta {
   // chicas por servicio (ej. 0.003 unidades de una lima), 2 decimales
   // redondeaba eso a 0.
   cantidad_usada Decimal @db.Decimal(10, 4)
+  // true para recetas cargadas como estimacion (ej. servicios de pestañas/
+  // cejas sin dato real de consumo todavia), a validar despues con compras
+  // reales. Las recetas reales del catalogo original quedan en false.
+  es_provisional Boolean @default(false)
 
   servicio Servicio @relation(fields: [servicio_id], references: [id])
   insumo   Insumo   @relation(fields: [insumo_id], references: [id])

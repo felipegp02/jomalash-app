@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE `RECETA` ADD COLUMN `es_provisional` BOOLEAN NOT NULL DEFAULT false;
