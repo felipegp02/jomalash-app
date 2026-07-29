@@ -4,14 +4,18 @@ import { api } from '../../api/client';
 const campoInput =
   'w-28 shrink-0 rounded-xl border border-borde-tarjeta bg-white px-3 py-2 text-sm text-texto outline-none focus:border-dorado focus:ring-2 focus:ring-dorado/20';
 
-// Insumos con envase (ml/gramos) no son practicos de medir a ojo en su
-// unidad cruda ("¿cuantos ml de aceite quedan?"), asi que para esos el
-// input pide la cantidad en unidad_compra (frascos, tarros...) y se
-// convierte con contenido_por_compra. Los que ya se cuentan sueltos
-// (tipo_medida 'unidades', ej. algodon/toallas/tijeras) no cambian: ahi
-// contar la unidad real es lo practico.
+// Cualquier consumible que se compra en un envase/paquete distinto de la
+// pieza suelta (ml, gramos siempre - un liquido/peso nunca se cuenta a
+// ojo -, o "unidades" vendidas en paquete/bandeja/rollo con varias piezas
+// adentro, ej. Algodón x500 o Pestañas sueltas x16) pide la cantidad en
+// unidad_compra y convierte con contenido_por_compra. Los que se compran Y
+// se usan sueltos de a uno (unidad_compra literal "unidad": toallas,
+// tijeras, palitos de naranjo, separador de dedos, repuesto de lima, limas)
+// no cambian: ahi contar la pieza real es lo practico.
 function esConvertible(insumo) {
-  return insumo.tipo === 'consumible' && (insumo.tipo_medida === 'ml' || insumo.tipo_medida === 'gramos');
+  if (insumo.tipo !== 'consumible') return false;
+  if (insumo.tipo_medida === 'ml' || insumo.tipo_medida === 'gramos') return true;
+  return insumo.unidad_compra !== 'unidad';
 }
 
 // Redondea a 4 decimales (misma precision que stock_actual en la base) para
