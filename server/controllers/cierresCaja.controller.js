@@ -1,5 +1,6 @@
 const prisma = require('../lib/prisma');
 const { costoPromedioInsumos, costoInsumosDeVentas } = require('../utils/costos');
+const { gastosPorCategoriaDe } = require('../utils/gastos');
 
 // Colombia no tiene horario de verano: el offset UTC-5 es constante todo el ano.
 const OFFSET_BOGOTA_MS = 5 * 60 * 60 * 1000;
@@ -34,19 +35,6 @@ function rangoDiaBogota(fecha) {
   const fin = new Date(inicio.getTime() + 24 * 60 * 60 * 1000);
 
   return { fechaColumna, inicio, fin };
-}
-
-const CATEGORIAS_GASTO = ['arriendo', 'servicios', 'varios'];
-
-// Agrupa por categoria y siempre incluye las 3 categorias fijas (en 0 si ese
-// dia no hubo gasto de esa categoria), para que la UI no tenga que manejar
-// categorias ausentes.
-function gastosPorCategoriaDe(gastos) {
-  const mapa = new Map(CATEGORIAS_GASTO.map((c) => [c, { categoria: c, total: 0 }]));
-  for (const g of gastos) {
-    mapa.get(g.categoria).total += g.monto;
-  }
-  return [...mapa.values()];
 }
 
 // RF-22: snapshot fijo del dia, calculado con el mismo criterio de

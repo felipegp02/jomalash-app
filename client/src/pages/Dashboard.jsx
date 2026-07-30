@@ -18,6 +18,8 @@ function hoyISO() {
   return new Date().toISOString().slice(0, 10);
 }
 
+const ETIQUETAS_CATEGORIA_GASTO = { arriendo: 'Arriendo', servicios: 'Servicios', varios: 'Varios' };
+
 // Cada tarjeta de tendencia (venta, servicios) tiene su propio toggle
 // Por mes / Por dia y pide sus datos por separado, sin depender del
 // selector de periodo general del dashboard.
@@ -322,6 +324,34 @@ export default function Dashboard() {
 
       {mostrarRankingsEquipo && (
         <>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            {cargando || !resumen ? (
+              <>
+                <CardSkeleton alto="h-28" />
+                <CardSkeleton alto="h-28" />
+              </>
+            ) : (
+              <>
+                <KpiCard etiqueta="Compras de insumos" valor={formatearMoneda(resumen.comprasTotal)} />
+                <KpiCard etiqueta="Gastos del periodo" valor={formatearMoneda(resumen.gastosPeriodo.total)}>
+                  <div className="mt-1 flex flex-col gap-0.5 text-xs text-texto-secundario">
+                    {resumen.gastosPeriodo.total === 0 ? (
+                      <p>Sin gastos en este periodo.</p>
+                    ) : (
+                      resumen.gastosPeriodo.porCategoria
+                        .filter((g) => g.total > 0)
+                        .map((g) => (
+                          <p key={g.categoria}>
+                            {ETIQUETAS_CATEGORIA_GASTO[g.categoria]}: {formatearMoneda(g.total)}
+                          </p>
+                        ))
+                    )}
+                  </div>
+                </KpiCard>
+              </>
+            )}
+          </div>
+
           <div className="rounded-[20px] border border-borde-tarjeta bg-white p-5 shadow-sm">
             <h3 className="mb-3 text-sm font-semibold text-texto">Ranking de empleadas — comision</h3>
             {cargando || !rankingEmpleadas ? (

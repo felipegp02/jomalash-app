@@ -1,5 +1,6 @@
 const prisma = require('../lib/prisma');
 const { costoPromedioInsumos, costoInsumosDeVentas } = require('../utils/costos');
+const { gastosPorCategoriaDe } = require('../utils/gastos');
 
 const MESES = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
 const DIAS = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
@@ -79,6 +80,44 @@ async function gastoTotalEnRango(filtrosComunes, desde, hasta) {
 
   const agregado = await prisma.gasto.aggregate({ where, _sum: { monto: true } });
   return agregado._sum.monto || 0;
+}
+
+// --- A partir de aca: tarjetas puramente informativas del Dashboard
+// (Compras de insumos / Gastos del periodo). Son consultas nuevas en
+// paralelo que no alimentan totalesDe/totalesCompletos ni gananciaNeta -
+// esas dos funciones de arriba quedan intactas, sin usar nada de lo de abajo.
+
+// Compra.fecha es @db.Date (sin hora), a diferencia de Venta.fecha que es un
+// timestamp completo. Comparar una columna DATE contra un timestamp con hora
+// (ej. "hoy 05:00" que es la medianoche de Bogota en UTC) excluye por error
+// las compras del primer dia del rango, porque MySQL compara la columna como
+// si fuera "ese dia a las 00:00 UTC" contra un limite que ya paso las 00:00.
+// Por eso se recorta desde/hasta a la parte de fecha (YYYY-MM-DD) antes de
+// filtrar, igual que hace cierresCaja.controller.js con CIERRES_CAJA.fecha.
+async function comprasTotalEnRango(sedeId, desde, hasta) {
+  const where = {
+    fecha: {
+      gte: new Date(desde.toISOString().slice(0, 10)),
+      lt: new Date(hasta.toISOString().slice(0, 10)),
+    },
+  };
+  if (sedeId) where.sede_id = sedeId;
+
+  const agregado = await prisma.compra.aggregate({ where, _sum: { costo_total: true } });
+  return agregado._sum.costo_total || 0;
+}
+
+// A diferencia de gastoTotalEnRango (que se usa para gananciaNeta y por eso
+// da 0 en modo individual), esta es solo para la tarjeta informativa: el
+// frontend decide cuando mostrarla (solo en vista de equipo), asi que aca
+// siempre se calcula el total real de la sede/periodo filtrado.
+async function gastosDelPeriodo(filtrosComunes, desde, hasta) {
+  const where = { fecha: { gte: desde, lt: hasta } };
+  if (filtrosComunes.sede_id) where.sede_id = filtrosComunes.sede_id;
+
+  const gastos = await prisma.gasto.findMany({ where });
+  const total = gastos.reduce((suma, g) => suma + g.monto, 0);
+  return { total, porCategoria: gastosPorCategoriaDe(gastos) };
 }
 
 function totalesDe(ventas) {
@@ -163,6 +202,11 @@ async function resumen(req, res) {
   const porSede = porSedeDe(ventas);
   const porMetodoPago = porMetodoPagoDe(ventas);
 
+  // Tarjetas informativas nuevas, en paralelo: no participan de "totales" ni
+  // de gananciaNeta (ver comentario arriba de comprasTotalEnRango).
+  const comprasTotal = await comprasTotalEnRango(sedeEfectiva(req, req.query), desde, hasta);
+  const gastosPeriodo = await gastosDelPeriodo(filtros, desde, hasta);
+
   let comparación = null;
   if (req.query.comparar === 'true') {
     const duracion = hasta.getTime() - desde.getTime();
@@ -172,7 +216,7 @@ async function resumen(req, res) {
     comparación = await totalesCompletos(prevVentas, costoPromedio, filtros, prevDesde, prevHasta);
   }
 
-  res.json({ ...totales, avanceMeta, comparación, porSede, porMetodoPago });
+  res.json({ ...totales, avanceMeta, comparación, porSede, porMetodoPago, comprasTotal, gastosPeriodo });
 }
 
 // GET /dashboard/tiempo
