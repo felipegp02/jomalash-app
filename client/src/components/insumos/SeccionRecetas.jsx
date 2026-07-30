@@ -85,7 +85,7 @@ export default function SeccionRecetas() {
 
   return (
     <div className="rounded-[20px] border border-borde-tarjeta bg-white p-5 shadow-sm">
-      <h3 className="mb-3 text-sm font-semibold text-texto">Receta por servicio</h3>
+      <h3 className="mb-3 text-sm font-semibold text-texto">Insumos por servicio</h3>
 
       <div className="flex flex-col gap-1.5">
         <label className={campoLabel}>Servicio</label>
@@ -110,7 +110,9 @@ export default function SeccionRecetas() {
           ) : (
             <>
               {lineas.length === 0 && (
-                <p className="text-sm text-texto-secundario">Este servicio todavia no tiene receta definida.</p>
+                <p className="text-sm text-texto-secundario">
+                  Este servicio todavia no tiene insumos por servicio definidos.
+                </p>
               )}
 
               {lineas.map((linea, index) => (
@@ -157,7 +159,7 @@ export default function SeccionRecetas() {
               </button>
 
               {error && <p className="text-sm text-red-600">{error}</p>}
-              {guardado && <p className="text-sm text-verde">Receta guardada.</p>}
+              {guardado && <p className="text-sm text-verde">Insumos por servicio guardados.</p>}
 
               <button
                 type="button"
@@ -165,7 +167,7 @@ export default function SeccionRecetas() {
                 disabled={guardando}
                 className="mt-1 w-fit rounded-lg bg-dorado px-4 py-2 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-60"
               >
-                {guardando ? 'Guardando...' : 'Guardar receta'}
+                {guardando ? 'Guardando...' : 'Guardar insumos por servicio'}
               </button>
             </>
           )}

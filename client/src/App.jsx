@@ -20,7 +20,7 @@ import ModalMiCuenta from './components/ModalMiCuenta';
 import './index.css';
 
 const TITULOS = {
-  dashboard: 'Dashboard',
+  dashboard: 'Resumen general',
   registrar: 'Registrar venta',
   historial: 'Historial',
   insumos: 'Insumos',

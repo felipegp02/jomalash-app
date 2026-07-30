@@ -100,11 +100,11 @@ function FilaInsumo({ insumo, editando, edicion, onEdicionChange, onIniciarEdici
             {insumo.nombre}
             {insumo.alerta && (
               <span
-                title="Stock por debajo del minimo"
+                title="Inventario por debajo del minimo"
                 className="flex items-center gap-1 rounded-full bg-red-50 px-1.5 py-0.5 text-[10px] font-medium text-rojo"
               >
                 <IconAlerta width={12} height={12} />
-                Bajo stock
+                Bajo inventario
               </span>
             )}
           </p>
@@ -235,7 +235,7 @@ export default function SeccionStock() {
     <div className="flex flex-col gap-4">
       <div className="rounded-[20px] border border-borde-tarjeta bg-white p-5 shadow-sm">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <h3 className="text-sm font-semibold text-texto">Insumos y stock</h3>
+          <h3 className="text-sm font-semibold text-texto">Insumos e inventario</h3>
           <div className="flex gap-2">
             <button
               type="button"

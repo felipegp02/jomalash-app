@@ -137,7 +137,7 @@ export default function SeccionCompras() {
         {totalEnUnidadUso !== null && (
           <p className="rounded-lg bg-dorado-fondo px-3 py-2 text-sm text-texto">
             Compraste {cantidad} {insumoSeleccionado.unidad_compra} = {totalEnUnidadUso}{' '}
-            {insumoSeleccionado.tipo_medida} de stock
+            {insumoSeleccionado.tipo_medida} de inventario
           </p>
         )}
 

@@ -16,7 +16,7 @@ export const PESTANAS = [
   // dia. En el sidebar de escritorio va sola arriba de todo con su propio
   // estilo; en movil (BottomNav) es el boton circular flotante.
   { id: 'registrar', etiqueta: 'Registrar', Icono: IconRegistrar, disponible: true, destacado: true, separadorDespues: true },
-  { id: 'dashboard', etiqueta: 'Dashboard', Icono: IconDashboard, disponible: true, enBarraMovil: true },
+  { id: 'dashboard', etiqueta: 'Resumen general', Icono: IconDashboard, disponible: true, enBarraMovil: true },
   { id: 'historial', etiqueta: 'Historial', Icono: IconHistorial, disponible: true, enBarraMovil: true },
   { id: 'caja', etiqueta: 'Caja', Icono: IconCaja, disponible: true, visible: (u) => u.ve_caja },
   { id: 'nomina', etiqueta: 'Nómina', Icono: IconNomina, disponible: true, visible: (u) => u.ve_nomina },

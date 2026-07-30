@@ -8,7 +8,7 @@ const PERMISOS = [
   { campo: 've_insumos', etiqueta: 'Ver Insumos' },
   { campo: 've_nomina', etiqueta: 'Ver Nómina' },
   { campo: 've_caja', etiqueta: 'Ver Caja' },
-  { campo: 've_dashboard_completo', etiqueta: 'Ver Dashboard completo' },
+  { campo: 've_dashboard_completo', etiqueta: 'Ver Resumen general completo' },
   { campo: 'gestiona_catalogo', etiqueta: 'Gestionar catálogo (Servicios)' },
   { campo: 'gestiona_empleadas', etiqueta: 'Gestionar empleadas' },
 ];

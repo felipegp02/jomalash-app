@@ -101,7 +101,7 @@ export default function CamposInsumo({ valores, onChange, incluirStockInicial = 
 
       {incluirStockInicial && (
         <div className="flex flex-col gap-1">
-          <label className={campoLabel}>Stock inicial</label>
+          <label className={campoLabel}>Inventario inicial</label>
           <input
             type="number"
             min="0"
@@ -113,7 +113,7 @@ export default function CamposInsumo({ valores, onChange, incluirStockInicial = 
       )}
 
       <div className="flex flex-col gap-1">
-        <label className={campoLabel}>Stock minimo</label>
+        <label className={campoLabel}>Inventario minimo</label>
         <input
           type="number"
           min="0"

@@ -4,8 +4,8 @@ import SeccionRecetas from '../components/insumos/SeccionRecetas';
 import SeccionCompras from '../components/insumos/SeccionCompras';
 
 const SUBPESTANAS = [
-  { id: 'stock', etiqueta: 'Stock' },
-  { id: 'recetas', etiqueta: 'Recetas' },
+  { id: 'stock', etiqueta: 'Inventario' },
+  { id: 'recetas', etiqueta: 'Insumos por servicio' },
   { id: 'compras', etiqueta: 'Compras' },
 ];
 
