@@ -204,6 +204,7 @@ export default function Dashboard() {
                 <p>Venta bruta: {formatearMoneda(resumen.ventaBruta)}</p>
                 <p>− Comisiones: {formatearMoneda(resumen.comisionTotal)}</p>
                 <p>− Insumos: {formatearMoneda(resumen.costoInsumos)}</p>
+                {resumen.gastoTotal > 0 && <p>− Gastos: {formatearMoneda(resumen.gastoTotal)}</p>}
               </div>
             </KpiCard>
 

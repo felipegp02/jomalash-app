@@ -1,10 +1,12 @@
 import { useState } from 'react';
 import SeccionCierre from '../components/caja/SeccionCierre';
+import SeccionGastos from '../components/caja/SeccionGastos';
 import SeccionMetas from '../components/caja/SeccionMetas';
 import SeccionReportes from '../components/caja/SeccionReportes';
 
 const SUBPESTANAS = [
   { id: 'cierre', etiqueta: 'Cierre de caja' },
+  { id: 'gastos', etiqueta: 'Gastos' },
   { id: 'metas', etiqueta: 'Metas' },
   { id: 'reportes', etiqueta: 'Reportes' },
 ];
@@ -30,6 +32,7 @@ export default function Caja({ sedes, sedeSeleccionada }) {
       </div>
 
       {seccion === 'cierre' && <SeccionCierre sedes={sedes} sedeSeleccionada={sedeSeleccionada} />}
+      {seccion === 'gastos' && <SeccionGastos sedes={sedes} sedeSeleccionada={sedeSeleccionada} />}
       {seccion === 'metas' && <SeccionMetas sedes={sedes} sedeSeleccionada={sedeSeleccionada} />}
       {seccion === 'reportes' && <SeccionReportes sedes={sedes} sedeSeleccionada={sedeSeleccionada} />}
     </div>

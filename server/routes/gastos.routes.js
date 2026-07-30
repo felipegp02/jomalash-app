@@ -1,0 +1,11 @@
+const express = require('express');
+const { listar, crear } = require('../controllers/gastos.controller');
+const { authenticate, requierePermiso } = require('../middleware/auth.middleware');
+const asyncHandler = require('../middleware/asyncHandler');
+
+const router = express.Router();
+
+router.get('/', authenticate, requierePermiso('ve_caja'), asyncHandler(listar));
+router.post('/', authenticate, requierePermiso('ve_caja'), asyncHandler(crear));
+
+module.exports = router;

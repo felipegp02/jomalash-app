@@ -5,6 +5,8 @@ import { IconCheck, IconAlerta } from '../Icons';
 import CardSkeleton from '../dashboard/CardSkeleton';
 import SinDatos from '../dashboard/SinDatos';
 
+const ETIQUETAS_CATEGORIA_GASTO = { arriendo: 'Arriendo', servicios: 'Servicios', varios: 'Varios' };
+
 const campoInput =
   'rounded-xl border border-borde-tarjeta bg-white px-3 py-2 text-sm text-texto outline-none focus:border-dorado focus:ring-2 focus:ring-dorado/20';
 
@@ -97,6 +99,19 @@ export default function SeccionCierre({ sedes, sedeSeleccionada }) {
             <Fila etiqueta="Venta bruta" valor={formatearMoneda(preview.totalVenta)} />
             <Fila etiqueta="Comisiones" valor={formatearMoneda(preview.comisionTotal)} />
             <Fila etiqueta="Costo de insumos" valor={formatearMoneda(preview.costoInsumos)} />
+            {preview.gastoTotal > 0 && (
+              <>
+                <Fila etiqueta="Gastos" valor={formatearMoneda(preview.gastoTotal)} />
+                {preview.gastosPorCategoria
+                  .filter((g) => g.total > 0)
+                  .map((g) => (
+                    <div key={g.categoria} className="flex items-center justify-between py-1 pl-3">
+                      <span className="text-xs text-texto-secundario">{ETIQUETAS_CATEGORIA_GASTO[g.categoria]}</span>
+                      <span className="text-xs text-texto-secundario">{formatearMoneda(g.total)}</span>
+                    </div>
+                  ))}
+              </>
+            )}
             <div className="mt-1 border-t border-borde-tarjeta pt-2">
               <Fila etiqueta="Ganancia neta" valor={formatearMoneda(preview.totalNeto)} destacado />
             </div>

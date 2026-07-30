@@ -17,6 +17,7 @@ const cierresCajaRoutes = require('./routes/cierresCaja.routes');
 const metasRoutes = require('./routes/metas.routes');
 const reportesRoutes = require('./routes/reportes.routes');
 const nominaRoutes = require('./routes/nomina.routes');
+const gastosRoutes = require('./routes/gastos.routes');
 const errorHandler = require('./middleware/errorHandler');
 
 const app = express();
@@ -48,6 +49,7 @@ app.use('/cierres-caja', cierresCajaRoutes);
 app.use('/metas', metasRoutes);
 app.use('/reportes', reportesRoutes);
 app.use('/nomina', nominaRoutes);
+app.use('/gastos', gastosRoutes);
 
 app.use((req, res) => {
   res.status(404).json({ error: 'Ruta no encontrada' });

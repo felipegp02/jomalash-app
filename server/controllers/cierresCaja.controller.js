@@ -36,9 +36,24 @@ function rangoDiaBogota(fecha) {
   return { fechaColumna, inicio, fin };
 }
 
+const CATEGORIAS_GASTO = ['arriendo', 'servicios', 'varios'];
+
+// Agrupa por categoria y siempre incluye las 3 categorias fijas (en 0 si ese
+// dia no hubo gasto de esa categoria), para que la UI no tenga que manejar
+// categorias ausentes.
+function gastosPorCategoriaDe(gastos) {
+  const mapa = new Map(CATEGORIAS_GASTO.map((c) => [c, { categoria: c, total: 0 }]));
+  for (const g of gastos) {
+    mapa.get(g.categoria).total += g.monto;
+  }
+  return [...mapa.values()];
+}
+
 // RF-22: snapshot fijo del dia, calculado con el mismo criterio de
 // "ganancia neta" que usa el Dashboard (venta bruta - comisiones - costo de
-// insumos consumidos), para que los números del cierre y del dashboard cuadren.
+// insumos consumidos - gastos operativos), para que los números del cierre y
+// del dashboard cuadren. Un dia sin gastos da gastoTotal=0, que deja
+// totalNeto identico a la formula anterior (sin gastos).
 async function calcularSnapshot(sedeId, fecha) {
   const { fechaColumna, inicio, fin } = rangoDiaBogota(fecha);
 
@@ -53,9 +68,24 @@ async function calcularSnapshot(sedeId, fecha) {
   const costoPromedio = await costoPromedioInsumos();
   const costoInsumos = await costoInsumosDeVentas(ventas, costoPromedio);
 
-  const totalNeto = totalVenta - comisionTotal - costoInsumos;
+  const gastos = await prisma.gasto.findMany({
+    where: { sede_id: sedeId, fecha: { gte: inicio, lt: fin } },
+  });
+  const gastoTotal = gastos.reduce((suma, g) => suma + g.monto, 0);
+  const gastosPorCategoria = gastosPorCategoriaDe(gastos);
 
-  return { fecha: fechaColumna, totalServicios, totalVenta, comisionTotal, costoInsumos, totalNeto };
+  const totalNeto = totalVenta - comisionTotal - costoInsumos - gastoTotal;
+
+  return {
+    fecha: fechaColumna,
+    totalServicios,
+    totalVenta,
+    comisionTotal,
+    costoInsumos,
+    gastoTotal,
+    gastosPorCategoria,
+    totalNeto,
+  };
 }
 
 // GET /cierres-caja/preview?sede_id=&fecha= (Admin)

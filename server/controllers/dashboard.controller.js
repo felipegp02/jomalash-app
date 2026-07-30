@@ -66,6 +66,21 @@ async function ventasEnRango(filtrosComunes, desde, hasta) {
   });
 }
 
+// Los gastos son por sede, no por empleada: solo tienen sentido restados en
+// una vista de equipo/sede completa. En modo individual (usuario_id presente
+// en los filtros) se devuelve 0 sin consultar nada, para que la vista
+// personal de cada empleada quede exactamente igual que antes de que
+// existieran los gastos.
+async function gastoTotalEnRango(filtrosComunes, desde, hasta) {
+  if (filtrosComunes.usuario_id) return 0;
+
+  const where = { fecha: { gte: desde, lt: hasta } };
+  if (filtrosComunes.sede_id) where.sede_id = filtrosComunes.sede_id;
+
+  const agregado = await prisma.gasto.aggregate({ where, _sum: { monto: true } });
+  return agregado._sum.monto || 0;
+}
+
 function totalesDe(ventas) {
   const servicios = ventas.length;
   const ventaBruta = ventas.reduce((suma, v) => suma + v.precio_total, 0);
@@ -75,13 +90,15 @@ function totalesDe(ventas) {
 }
 
 // Ganancia neta = venta bruta - comisiones pagadas - costo de insumos
-// consumidos. Mientras no haya compras registradas (Fase 5), el costo de
-// insumos es 0 y la ganancia neta equivale a venta bruta - comisiones.
-async function totalesCompletos(ventas, costoPromedio) {
+// consumidos - gastos operativos del periodo (estos ultimos solo en vista de
+// equipo, ver gastoTotalEnRango). Un periodo sin gastos da gastoTotal=0, que
+// deja gananciaNeta identica a la formula anterior (sin gastos).
+async function totalesCompletos(ventas, costoPromedio, filtrosComunes, desde, hasta) {
   const base = totalesDe(ventas);
   const costoInsumos = await costoInsumosDeVentas(ventas, costoPromedio);
-  const gananciaNeta = base.ventaBruta - base.comisionTotal - costoInsumos;
-  return { ...base, costoInsumos, gananciaNeta };
+  const gastoTotal = await gastoTotalEnRango(filtrosComunes, desde, hasta);
+  const gananciaNeta = base.ventaBruta - base.comisionTotal - costoInsumos - gastoTotal;
+  return { ...base, costoInsumos, gastoTotal, gananciaNeta };
 }
 
 function porSedeDe(ventas) {
@@ -141,7 +158,7 @@ async function resumen(req, res) {
 
   const ventas = await ventasEnRango(filtros, desde, hasta);
   const costoPromedio = await costoPromedioInsumos();
-  const totales = await totalesCompletos(ventas, costoPromedio);
+  const totales = await totalesCompletos(ventas, costoPromedio, filtros, desde, hasta);
   const avanceMeta = await calcularAvanceMeta(req, req.query);
   const porSede = porSedeDe(ventas);
   const porMetodoPago = porMetodoPagoDe(ventas);
@@ -152,7 +169,7 @@ async function resumen(req, res) {
     const prevHasta = desde;
     const prevDesde = new Date(desde.getTime() - duracion);
     const prevVentas = await ventasEnRango(filtros, prevDesde, prevHasta);
-    comparación = await totalesCompletos(prevVentas, costoPromedio);
+    comparación = await totalesCompletos(prevVentas, costoPromedio, filtros, prevDesde, prevHasta);
   }
 
   res.json({ ...totales, avanceMeta, comparación, porSede, porMetodoPago });

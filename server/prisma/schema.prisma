@@ -36,6 +36,7 @@ model Sede {
   metas       Meta[]
   cierresCaja CierreCaja[]
   pagosNomina PagoNomina[]
+  gastos      Gasto[]
 
   @@map("SEDES")
 }
@@ -73,6 +74,7 @@ model Usuario {
   resetTokens        PasswordResetToken[]
   pagosNominaRecibidos   PagoNomina[] @relation("PagoNominaUsuario")
   pagosNominaRegistrados PagoNomina[] @relation("PagoNominaRegistradoPor")
+  gastosRegistrados      Gasto[]
 
   @@map("USUARIOS")
 }
@@ -227,6 +229,31 @@ model CierreCaja {
 
   @@unique([sede_id, fecha])
   @@map("CIERRES_CAJA")
+}
+
+// Gastos operativos del dia (arriendo, servicios publicos, varios),
+// distintos de las compras de insumos: no descuentan ni afectan stock, solo
+// se restan de la ganancia neta en Cierre de Caja y en el Dashboard (RF
+// nuevo, ver server/controllers/cierresCaja.controller.js).
+enum CategoriaGasto {
+  arriendo
+  servicios
+  varios
+}
+
+model Gasto {
+  id             Int            @id @default(autoincrement())
+  categoria      CategoriaGasto
+  monto          Int
+  nota           String?        @db.VarChar(200)
+  sede_id        Int
+  fecha          DateTime       @default(now())
+  registrado_por Int
+
+  sede          Sede    @relation(fields: [sede_id], references: [id])
+  registradoPor Usuario @relation(fields: [registrado_por], references: [id])
+
+  @@map("GASTOS")
 }
 
 enum TipoPagoNomina {
