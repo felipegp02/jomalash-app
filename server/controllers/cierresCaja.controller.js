@@ -2,6 +2,7 @@ const prisma = require('../lib/prisma');
 const { costoPromedioInsumos, costoInsumosDeVentas } = require('../utils/costos');
 const { gastosPorCategoriaDe } = require('../utils/gastos');
 const { METODOS_PAGO, porMetodoPagoDe } = require('../utils/ventas');
+const { diaCivilBogota, rangoBogota } = require('../utils/bogota');
 
 // Propina por metodo de pago (puede diferir del metodo de pago del
 // servicio): importa para cuadrar el efectivo fisico de la caja, aunque la
@@ -191,4 +192,59 @@ async function listar(req, res) {
   res.json({ cierres });
 }
 
-module.exports = { preview, crear, listar };
+// GET /cierres-caja/dias?sede_id=&desde=&hasta= (Admin) - solo lectura, no
+// toca ningun calculo existente. Lista los dias con al menos una venta en el
+// rango, cruzados contra CIERRES_CAJA para saber cuales ya estan cerrados.
+async function dias(req, res) {
+  const { sede_id, desde, hasta } = req.query;
+  if (!sede_id || !desde || !hasta) {
+    return res.status(400).json({ error: 'Sede, desde y hasta son requeridos' });
+  }
+
+  const sede = await prisma.sede.findUnique({ where: { id: Number(sede_id) } });
+  if (!sede) return res.status(400).json({ error: 'Sede inválida' });
+
+  const { inicio, fin } = rangoBogota(desde, hasta);
+
+  const ventas = await prisma.venta.findMany({
+    where: { sede_id: sede.id, anulada: false, fecha: { gte: inicio, lt: fin } },
+    select: { fecha: true, precio_total: true },
+  });
+
+  const porDia = new Map();
+  for (const v of ventas) {
+    const dia = diaCivilBogota(v.fecha);
+    const actual = porDia.get(dia) || { fecha: dia, servicios: 0, ventaBruta: 0 };
+    actual.servicios += 1;
+    actual.ventaBruta += v.precio_total;
+    porDia.set(dia, actual);
+  }
+
+  // CIERRES_CAJA.fecha es @db.Date (sin hora, sin zona horaria real): se
+  // compara por el string YYYY-MM-DD tal cual, sin pasarla por diaCivilBogota
+  // (que asume un timestamp real y la correria un dia para atras).
+  const cierres = await prisma.cierreCaja.findMany({
+    where: {
+      sede_id: sede.id,
+      fecha: { gte: new Date(`${desde}T00:00:00.000Z`), lte: new Date(`${hasta}T00:00:00.000Z`) },
+    },
+  });
+  const cierrePorDia = new Map(cierres.map((c) => [c.fecha.toISOString().slice(0, 10), c]));
+
+  const resultado = [...porDia.values()]
+    .map((d) => {
+      const cierre = cierrePorDia.get(d.fecha);
+      return {
+        fecha: d.fecha,
+        servicios: d.servicios,
+        ventaBruta: d.ventaBruta,
+        cerrado: Boolean(cierre),
+        totalNeto: cierre ? cierre.total_neto : null,
+      };
+    })
+    .sort((a, b) => b.fecha.localeCompare(a.fecha));
+
+  res.json({ dias: resultado });
+}
+
+module.exports = { preview, crear, listar, dias };

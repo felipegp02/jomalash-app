@@ -4,6 +4,7 @@ import { formatearMoneda } from '../../utils/formato';
 import { IconCheck, IconAlerta } from '../Icons';
 import CardSkeleton from '../dashboard/CardSkeleton';
 import SinDatos from '../dashboard/SinDatos';
+import ListaDiasCierre from './ListaDiasCierre';
 
 const ETIQUETAS_CATEGORIA_GASTO = { arriendo: 'Arriendo', servicios: 'Servicios', varios: 'Varios' };
 const ETIQUETAS_METODO = { efectivo: 'Efectivo', transferencia: 'Transferencia', tarjeta: 'Tarjeta' };
@@ -252,6 +253,8 @@ export default function SeccionCierre({ sedes, sedeSeleccionada }) {
           </div>
         )}
       </div>
+
+      <ListaDiasCierre sedeId={sedeId} onSeleccionarFecha={setFecha} />
     </div>
   );
 }

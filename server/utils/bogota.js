@@ -27,4 +27,18 @@ function rangoMesBogota(mes, anio) {
   return { inicio, fin };
 }
 
-module.exports = { diaCivilBogota, rangoMesBogota };
+// Rango [inicio, fin) de instantes UTC entre dos fechas civiles "YYYY-MM-DD"
+// en Bogota, ambas inclusive (para filtrar VENTAS.fecha por un rango
+// arbitrario, ej. la lista de dias de Cierre de Caja).
+function rangoBogota(desde, hasta) {
+  const [yDesde, mDesde, dDesde] = desde.split('-').map(Number);
+  const [yHasta, mHasta, dHasta] = hasta.split('-').map(Number);
+  const inicioColumna = new Date(Date.UTC(yDesde, mDesde - 1, dDesde));
+  // dia siguiente al "hasta" para que el limite superior quede exclusivo.
+  const finColumna = new Date(Date.UTC(yHasta, mHasta - 1, dHasta + 1));
+  const inicio = new Date(inicioColumna.getTime() + OFFSET_BOGOTA_MS);
+  const fin = new Date(finColumna.getTime() + OFFSET_BOGOTA_MS);
+  return { inicio, fin };
+}
+
+module.exports = { diaCivilBogota, rangoMesBogota, rangoBogota };

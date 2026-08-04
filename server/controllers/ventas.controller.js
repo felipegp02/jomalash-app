@@ -1,4 +1,7 @@
 const prisma = require('../lib/prisma');
+const { diaYaCerrado } = require('../utils/cierres');
+
+const MENSAJE_DIA_CERRADO = 'Este día ya tiene la caja cerrada, no se pueden registrar más ventas';
 
 const ventaConRelaciones = {
   servicio: { select: { nombre: true, categoria: true } },
@@ -114,6 +117,11 @@ async function crear(req, res) {
     return res.status(400).json({ error: 'Empleada inválida' });
   }
 
+  const fechaEfectiva = fechaVenta || new Date();
+  if (await diaYaCerrado(usuarioAtiende.sede_id, fechaEfectiva)) {
+    return res.status(400).json({ error: MENSAJE_DIA_CERRADO });
+  }
+
   // RF-05: la venta total se autocompleta desde el catalogo y es editable.
   const total = precio_total === undefined || precio_total === null || precio_total === ''
     ? servicio.precio
@@ -175,6 +183,13 @@ async function actualizar(req, res) {
   if (!venta) {
     return res.status(404).json({ error: 'Venta no encontrada' });
   }
+
+  // Aplica tanto a editar como a anular: el dia de la venta (no el de hoy)
+  // es lo que importa, ya que se puede estar corrigiendo una venta vieja.
+  if (await diaYaCerrado(venta.sede_id, venta.fecha)) {
+    return res.status(400).json({ error: MENSAJE_DIA_CERRADO });
+  }
+
   if (venta.anulada) {
     return res.status(400).json({ error: 'La venta ya está anulada' });
   }
