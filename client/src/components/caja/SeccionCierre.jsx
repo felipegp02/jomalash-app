@@ -11,6 +11,15 @@ const ETIQUETAS_METODO = { efectivo: 'Efectivo', transferencia: 'Transferencia',
 const campoInput =
   'rounded-xl border border-borde-tarjeta bg-white px-3 py-2 text-sm text-texto outline-none focus:border-dorado focus:ring-2 focus:ring-dorado/20';
 
+function formatearFecha(fechaYMD) {
+  return new Date(`${fechaYMD}T00:00:00Z`).toLocaleDateString('es-CO', {
+    timeZone: 'UTC',
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  });
+}
+
 function Fila({ etiqueta, valor, destacado }) {
   return (
     <div className="flex items-center justify-between py-1.5">
@@ -24,6 +33,9 @@ function Fila({ etiqueta, valor, destacado }) {
 // venta después. Solo se puede cerrar una vez por sede y por dia.
 export default function SeccionCierre({ sedes, sedeSeleccionada }) {
   const [sedeId, setSedeId] = useState(sedeSeleccionada || sedes[0]?.id || '');
+  // Vacio = hoy, mismo comportamiento que siempre (ver cargarPreview: sin
+  // fecha no se agrega el parametro a la URL, igual que antes de este cambio).
+  const [fecha, setFecha] = useState('');
   const [preview, setPreview] = useState(null);
   const [cargando, setCargando] = useState(true);
   const [confirmando, setConfirmando] = useState(false);
@@ -40,8 +52,10 @@ export default function SeccionCierre({ sedes, sedeSeleccionada }) {
     if (!sedeId) return;
     setCargando(true);
     setError('');
+    const params = new URLSearchParams({ sede_id: sedeId });
+    if (fecha) params.set('fecha', fecha);
     api
-      .get(`/cierres-caja/preview?sede_id=${sedeId}`)
+      .get(`/cierres-caja/preview?${params}`)
       .then(setPreview)
       .catch((err) => setError(err.message))
       .finally(() => setCargando(false));
@@ -57,13 +71,15 @@ export default function SeccionCierre({ sedes, sedeSeleccionada }) {
     cargarHistorial();
     setConfirmando(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sedeId]);
+  }, [sedeId, fecha]);
 
   async function handleConfirmarCierre() {
     setCerrando(true);
     setError('');
     try {
-      await api.post('/cierres-caja', { sede_id: Number(sedeId) });
+      const body = { sede_id: Number(sedeId) };
+      if (fecha) body.fecha = fecha;
+      await api.post('/cierres-caja', body);
       setConfirmando(false);
       cargarPreview();
       cargarHistorial();
@@ -77,17 +93,26 @@ export default function SeccionCierre({ sedes, sedeSeleccionada }) {
   return (
     <div className="flex flex-col gap-4">
       <div className="rounded-[20px] border border-borde-tarjeta bg-white p-5 shadow-sm">
-        <div className="flex items-center justify-between">
-          <h3 className="text-sm font-semibold text-texto">Cierre de hoy</h3>
-          {sedes.length > 1 && (
-            <select value={sedeId} onChange={(e) => setSedeId(Number(e.target.value))} className={campoInput}>
-              {sedes.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.nombre}
-                </option>
-              ))}
-            </select>
-          )}
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h3 className="text-sm font-semibold text-texto">{fecha ? `Cierre del ${formatearFecha(fecha)}` : 'Cierre de hoy'}</h3>
+          <div className="flex items-center gap-2">
+            <input
+              type="date"
+              value={fecha}
+              max={new Date().toISOString().slice(0, 10)}
+              onChange={(e) => setFecha(e.target.value)}
+              className={campoInput}
+            />
+            {sedes.length > 1 && (
+              <select value={sedeId} onChange={(e) => setSedeId(Number(e.target.value))} className={campoInput}>
+                {sedes.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.nombre}
+                  </option>
+                ))}
+              </select>
+            )}
+          </div>
         </div>
 
         {cargando || !preview ? (
@@ -145,15 +170,24 @@ export default function SeccionCierre({ sedes, sedeSeleccionada }) {
             {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
 
             {preview.yaCerrado ? (
-              <div className="mt-4 flex items-center gap-2 rounded-xl bg-dorado-fondo px-3 py-2 text-sm text-texto">
-                <IconCheck width={16} height={16} />
-                Ya se cerro la caja de hoy para esta sede.
+              <div className="mt-4 flex flex-col gap-1 rounded-xl bg-dorado-fondo px-3 py-3 text-sm text-texto">
+                <div className="flex items-center gap-2 font-medium">
+                  <IconCheck width={16} height={16} />
+                  Este dia ya esta cerrado
+                </div>
+                <p className="text-xs text-texto-secundario">
+                  {preview.cierre.total_servicios} servicios · cerrado por {preview.cierre.cerradoPor.nombre}
+                </p>
+                <p className="text-xs text-texto-secundario">
+                  Ganancia neta del cierre: {formatearMoneda(preview.cierre.total_neto)}
+                </p>
               </div>
             ) : confirmando ? (
               <div className="mt-4 flex flex-col gap-3 border-t border-borde-tarjeta pt-3">
                 <div className="flex items-start gap-2 text-sm text-texto-secundario">
                   <IconAlerta width={16} height={16} className="mt-0.5 shrink-0" />
-                  Este cierre queda fijo: si mas tarde editas o anulas una venta de hoy, estos totales no cambian.
+                  Este cierre queda fijo: si mas tarde editas o anulas una venta de{' '}
+                  {fecha ? 'esta fecha' : 'hoy'}, estos totales no cambian.
                 </div>
                 <div className="flex flex-wrap gap-2">
                   <button
@@ -179,7 +213,7 @@ export default function SeccionCierre({ sedes, sedeSeleccionada }) {
                 onClick={() => setConfirmando(true)}
                 className="mt-4 rounded-lg bg-dorado px-4 py-2 text-sm font-semibold text-white hover:opacity-90"
               >
-                Cerrar caja de hoy
+                {fecha ? 'Cerrar caja de este dia' : 'Cerrar caja de hoy'}
               </button>
             )}
           </div>

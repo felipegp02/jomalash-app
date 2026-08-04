@@ -111,11 +111,15 @@ async function preview(req, res) {
 
   const snapshot = await calcularSnapshot(sede.id, fecha);
 
-  const yaExiste = await prisma.cierreCaja.findFirst({
+  // Si el dia ya tiene cierre, se devuelve tambien el registro fijo (RF-22:
+  // snapshot que no cambia aunque despues se edite/anule una venta de ese
+  // dia), para que el frontend lo muestre en vez del boton de cerrar.
+  const cierreExistente = await prisma.cierreCaja.findFirst({
     where: { sede_id: sede.id, fecha: snapshot.fecha },
+    include: { cerradoPor: { select: { nombre: true } } },
   });
 
-  res.json({ ...snapshot, yaCerrado: Boolean(yaExiste) });
+  res.json({ ...snapshot, yaCerrado: Boolean(cierreExistente), cierre: cierreExistente });
 }
 
 // POST /cierres-caja (Admin)
