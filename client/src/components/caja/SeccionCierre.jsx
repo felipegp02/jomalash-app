@@ -6,6 +6,7 @@ import CardSkeleton from '../dashboard/CardSkeleton';
 import SinDatos from '../dashboard/SinDatos';
 
 const ETIQUETAS_CATEGORIA_GASTO = { arriendo: 'Arriendo', servicios: 'Servicios', varios: 'Varios' };
+const ETIQUETAS_METODO = { efectivo: 'Efectivo', transferencia: 'Transferencia', tarjeta: 'Tarjeta' };
 
 const campoInput =
   'rounded-xl border border-borde-tarjeta bg-white px-3 py-2 text-sm text-texto outline-none focus:border-dorado focus:ring-2 focus:ring-dorado/20';
@@ -97,6 +98,14 @@ export default function SeccionCierre({ sedes, sedeSeleccionada }) {
           <div className="mt-4 border-t border-borde-tarjeta pt-3">
             <Fila etiqueta="Servicios" valor={preview.totalServicios} />
             <Fila etiqueta="Venta bruta" valor={formatearMoneda(preview.totalVenta)} />
+            {preview.porMetodoPago
+              .filter((m) => m.venta > 0)
+              .map((m) => (
+                <div key={m.metodo_pago} className="flex items-center justify-between py-1 pl-3">
+                  <span className="text-xs text-texto-secundario">{ETIQUETAS_METODO[m.metodo_pago]}</span>
+                  <span className="text-xs text-texto-secundario">{formatearMoneda(m.venta)}</span>
+                </div>
+              ))}
             <Fila etiqueta="Comisiones" valor={formatearMoneda(preview.comisionTotal)} />
             <Fila etiqueta="Costo de insumos" valor={formatearMoneda(preview.costoInsumos)} />
             {preview.gastoTotal > 0 && (
@@ -115,6 +124,23 @@ export default function SeccionCierre({ sedes, sedeSeleccionada }) {
             <div className="mt-1 border-t border-borde-tarjeta pt-2">
               <Fila etiqueta="Ganancia neta" valor={formatearMoneda(preview.totalNeto)} destacado />
             </div>
+
+            {preview.propinaTotal > 0 && (
+              <div className="mt-3 border-t border-dashed border-borde-tarjeta pt-2">
+                <p className="mb-1 text-xs text-texto-secundario">
+                  Propinas (100% para la empleada, no forman parte de la venta bruta del negocio)
+                </p>
+                <Fila etiqueta="Total propinas" valor={formatearMoneda(preview.propinaTotal)} />
+                {preview.propinaPorMetodoPago
+                  .filter((p) => p.propina > 0)
+                  .map((p) => (
+                    <div key={p.metodo_pago} className="flex items-center justify-between py-1 pl-3">
+                      <span className="text-xs text-texto-secundario">{ETIQUETAS_METODO[p.metodo_pago]}</span>
+                      <span className="text-xs text-texto-secundario">{formatearMoneda(p.propina)}</span>
+                    </div>
+                  ))}
+              </div>
+            )}
 
             {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
 

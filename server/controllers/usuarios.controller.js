@@ -1,4 +1,5 @@
 const bcrypt = require('bcryptjs');
+const crypto = require('crypto');
 const prisma = require('../lib/prisma');
 
 const CAMPOS_PERMISOS = [
@@ -44,6 +45,31 @@ function permisosDelBody(body) {
   return data;
 }
 
+function slug(texto) {
+  return texto
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '') // quita tildes tras normalizar (marcas diacriticas NFD)
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, '.')
+    .replace(/[^a-z0-9.]/g, '');
+}
+
+// Una empleada no tiene login propio (confirmado: nunca se le comparte esta
+// contraseña ni este correo a nadie), asi que el formulario de alta no pide
+// ninguno de los dos - se generan aca, mismo criterio que
+// scripts/crear-empleadas-nuevas.js. El sufijo aleatorio evita choques de
+// unicidad si dos empleadas terminan con el mismo nombre.
+async function generarEmailInterno(nombre) {
+  for (let intento = 0; intento < 5; intento += 1) {
+    const sufijo = crypto.randomBytes(3).toString('hex');
+    const email = `${slug(nombre)}-${sufijo}@jomalash.local`;
+    const existente = await prisma.usuario.findUnique({ where: { email_recuperacion: email } });
+    if (!existente) return email;
+  }
+  throw new Error('No se pudo generar un correo interno único para la empleada');
+}
+
 // GET /usuarios (Admin) - selector de empleada en Registrar, y pantalla de
 // gestión de empleadas (con ?incluirInactivos=true para ver también las
 // dadas de baja).
@@ -67,13 +93,10 @@ async function listar(req, res) {
 // Siempre crea rol "empleada": esta pantalla es de gestión de empleadas,
 // no de administradores.
 async function crear(req, res) {
-  const { nombre, email_recuperacion, password, sede_id, porcentaje_comision } = req.body || {};
+  const { nombre, sede_id, porcentaje_comision } = req.body || {};
 
-  if (!nombre || !email_recuperacion || !password || !sede_id) {
-    return res.status(400).json({ error: 'Nombre, correo, contraseña y sede son requeridos' });
-  }
-  if (password.length < 8) {
-    return res.status(400).json({ error: 'La contraseña debe tener al menos 8 caracteres' });
+  if (!nombre || !sede_id) {
+    return res.status(400).json({ error: 'Nombre y sede son requeridos' });
   }
 
   const comisionNum = porcentaje_comision === undefined || porcentaje_comision === '' ? 0 : Number(porcentaje_comision);
@@ -86,17 +109,15 @@ async function crear(req, res) {
     return res.status(400).json({ error: 'Sede inválida' });
   }
 
-  const existente = await prisma.usuario.findUnique({ where: { email_recuperacion } });
-  if (existente) {
-    return res.status(400).json({ error: 'Ya existe un usuario con ese correo' });
-  }
-
-  const passwordHash = await bcrypt.hash(password, 10);
+  // Una empleada no tiene login propio: correo y contraseña se generan solos,
+  // nunca los pide el formulario (ver generarEmailInterno arriba).
+  const emailGenerado = await generarEmailInterno(nombre);
+  const passwordHash = await bcrypt.hash(crypto.randomBytes(24).toString('hex'), 10);
 
   const usuario = await prisma.usuario.create({
     data: {
       nombre,
-      email_recuperacion,
+      email_recuperacion: emailGenerado,
       password_hash: passwordHash,
       sede_id: sede.id,
       porcentaje_comision: comisionNum,

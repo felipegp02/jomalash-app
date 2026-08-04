@@ -1,6 +1,7 @@
 const prisma = require('../lib/prisma');
 const { costoPromedioInsumos, costoInsumosDeVentas } = require('../utils/costos');
 const { gastosPorCategoriaDe } = require('../utils/gastos');
+const { porMetodoPagoDe } = require('../utils/ventas');
 
 const MESES = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
 const DIAS = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
@@ -149,18 +150,6 @@ function porSedeDe(ventas) {
     mapa.set(v.sede_id, actual);
   }
   return [...mapa.values()];
-}
-
-const METODOS_PAGO = ['efectivo', 'transferencia', 'tarjeta'];
-
-function porMetodoPagoDe(ventas) {
-  const base = new Map(METODOS_PAGO.map((m) => [m, { metodo_pago: m, servicios: 0, venta: 0 }]));
-  for (const v of ventas) {
-    const actual = base.get(v.metodo_pago);
-    actual.servicios += 1;
-    actual.venta += v.precio_total;
-  }
-  return [...base.values()];
 }
 
 async function calcularAvanceMeta(req, query) {

@@ -53,6 +53,11 @@ function FilaMovimiento({ venta, esAdmin, expandido, onToggle, onCambio }) {
             <span className="rounded-full bg-crema px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-texto-secundario">
               {ETIQUETAS_METODO[venta.metodo_pago] || venta.metodo_pago}
             </span>
+            {venta.propina > 0 && (
+              <span className="rounded-full bg-dorado-fondo px-1.5 py-0.5 text-[10px] font-medium text-dorado">
+                + propina {ETIQUETAS_METODO[venta.propina_metodo_pago] || venta.propina_metodo_pago}
+              </span>
+            )}
             {venta.anulada && (
               <span className="rounded-full bg-red-50 px-1.5 py-0.5 text-[10px] font-medium text-rojo">
                 Anulada
@@ -61,20 +66,25 @@ function FilaMovimiento({ venta, esAdmin, expandido, onToggle, onCambio }) {
           </p>
         </div>
 
-        <div className="flex shrink-0 items-center gap-1">
-          <span
-            className={`text-sm font-semibold ${
-              venta.anulada ? 'text-texto-secundario line-through' : 'text-verde'
-            }`}
-          >
-            {formatearMoneda(venta.precio_total)}
-          </span>
-          {puedeExpandir && (
-            <IconChevronRight
-              width={16}
-              height={16}
-              className={`text-texto-secundario/60 transition-transform ${expandido ? 'rotate-90' : ''}`}
-            />
+        <div className="flex shrink-0 flex-col items-end gap-0.5">
+          <div className="flex items-center gap-1">
+            <span
+              className={`text-sm font-semibold ${
+                venta.anulada ? 'text-texto-secundario line-through' : 'text-verde'
+              }`}
+            >
+              {formatearMoneda(venta.precio_total)}
+            </span>
+            {puedeExpandir && (
+              <IconChevronRight
+                width={16}
+                height={16}
+                className={`text-texto-secundario/60 transition-transform ${expandido ? 'rotate-90' : ''}`}
+              />
+            )}
+          </div>
+          {venta.propina > 0 && (
+            <span className="text-xs font-medium text-dorado">+{formatearMoneda(venta.propina)} propina</span>
           )}
         </div>
       </button>

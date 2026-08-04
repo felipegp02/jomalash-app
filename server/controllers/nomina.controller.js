@@ -33,7 +33,7 @@ async function resumen(req, res) {
   const ventas = idsEmpleadas.length
     ? await prisma.venta.findMany({
         where: { usuario_id: { in: idsEmpleadas }, anulada: false, fecha: { gte: inicio, lt: fin } },
-        select: { usuario_id: true, fecha: true, comision: true },
+        select: { usuario_id: true, fecha: true, comision: true, propina: true },
       })
     : [];
 
@@ -48,6 +48,9 @@ async function resumen(req, res) {
     const ventasEmp = ventas.filter((v) => v.usuario_id === emp.id);
     const diasTrabajados = new Set(ventasEmp.map((v) => diaCivilBogota(v.fecha))).size;
     const comisionGanada = ventasEmp.reduce((suma, v) => suma + v.comision, 0);
+    // 100% para la empleada (ver Venta.propina): se suma al saldo igual que
+    // la comision. Con propina=0 en toda venta existente, no cambia nada.
+    const propinaGanada = ventasEmp.reduce((suma, v) => suma + v.propina, 0);
 
     const pagosEmp = pagos.filter((p) => p.usuario_id === emp.id);
     const vales = pagosEmp.filter((p) => p.tipo === 'vale').reduce((suma, p) => suma + p.monto, 0);
@@ -62,9 +65,10 @@ async function resumen(req, res) {
       sede: emp.sede.nombre,
       diasTrabajados,
       comisionGanada,
+      propinaGanada,
       vales,
       liquidaciones,
-      saldoPendiente: comisionGanada - vales - liquidaciones,
+      saldoPendiente: comisionGanada + propinaGanada - vales - liquidaciones,
     };
   });
 

@@ -40,9 +40,10 @@ export default function TarjetaEmpleada({ empleada, onPagoRegistrado }) {
         </button>
       </div>
 
-      <div className="mt-4 grid grid-cols-2 gap-3 border-t border-borde-tarjeta pt-4 sm:grid-cols-4">
+      <div className="mt-4 grid grid-cols-2 gap-3 border-t border-borde-tarjeta pt-4 sm:grid-cols-5">
         <Metrica etiqueta="Dias trabajados" valor={empleada.diasTrabajados} />
         <Metrica etiqueta="Comision ganada" valor={formatearMoneda(empleada.comisionGanada)} />
+        <Metrica etiqueta="Propinas" valor={formatearMoneda(empleada.propinaGanada)} />
         <Metrica etiqueta="Vales" valor={formatearMoneda(empleada.vales)} />
         <Metrica etiqueta="Liquidaciones" valor={formatearMoneda(empleada.liquidaciones)} />
       </div>

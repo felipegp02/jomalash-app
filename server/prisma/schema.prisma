@@ -42,17 +42,17 @@ model Sede {
 }
 
 model Usuario {
-  id                  Int        @id @default(autoincrement())
-  nombre              String     @db.VarChar(80)
-  rol                 RolUsuario
-  sede_id             Int
-  password_hash       String     @db.VarChar(255)
-  email_recuperacion  String     @unique @db.VarChar(120)
-  porcentaje_comision Decimal    @db.Decimal(4, 2)
-  activo              Boolean    @default(true)
+  id                    Int        @id @default(autoincrement())
+  nombre                String     @db.VarChar(80)
+  rol                   RolUsuario
+  sede_id               Int
+  password_hash         String     @db.VarChar(255)
+  email_recuperacion    String     @unique @db.VarChar(120)
+  porcentaje_comision   Decimal    @db.Decimal(4, 2)
+  activo                Boolean    @default(true)
   // Fuerza el flujo de "cambiar contrasena" en el proximo login (usado al
   // dar de alta una cuenta con contrasena temporal, ej. RNF de despliegue).
-  debe_cambiar_password Boolean  @default(false)
+  debe_cambiar_password Boolean    @default(false)
 
   // Permisos finos, mas alla de admin/empleada: por defecto un admin nace
   // con todos en true y una empleada con todos en false (ver seed.js y
@@ -67,13 +67,13 @@ model Usuario {
 
   sede Sede @relation(fields: [sede_id], references: [id])
 
-  ventasAtendidas    Venta[]              @relation("VentaUsuario")
-  ventasEditadas     Venta[]              @relation("VentaEditadoPor")
-  historialPrecios   HistorialPrecio[]
-  cierresCaja        CierreCaja[]
-  resetTokens        PasswordResetToken[]
-  pagosNominaRecibidos   PagoNomina[] @relation("PagoNominaUsuario")
-  pagosNominaRegistrados PagoNomina[] @relation("PagoNominaRegistradoPor")
+  ventasAtendidas        Venta[]              @relation("VentaUsuario")
+  ventasEditadas         Venta[]              @relation("VentaEditadoPor")
+  historialPrecios       HistorialPrecio[]
+  cierresCaja            CierreCaja[]
+  resetTokens            PasswordResetToken[]
+  pagosNominaRecibidos   PagoNomina[]         @relation("PagoNominaUsuario")
+  pagosNominaRegistrados PagoNomina[]         @relation("PagoNominaRegistradoPor")
   gastosRegistrados      Gasto[]
 
   @@map("USUARIOS")
@@ -108,18 +108,24 @@ model HistorialPrecio {
 }
 
 model Venta {
-  id               Int       @id @default(autoincrement())
-  fecha            DateTime  @default(now())
-  servicio_id      Int
-  usuario_id       Int
-  sede_id          Int
-  precio_total     Int
-  comision         Int
-  metodo_pago      MetodoPago @default(efectivo)
-  anulada          Boolean   @default(false)
-  motivo_anulacion String?   @db.VarChar(200)
-  editado_por      Int?
-  fecha_edicion    DateTime?
+  id                  Int         @id @default(autoincrement())
+  fecha               DateTime    @default(now())
+  servicio_id         Int
+  usuario_id          Int
+  sede_id             Int
+  precio_total        Int
+  comision            Int
+  metodo_pago         MetodoPago  @default(efectivo)
+  // 100% para la empleada, nunca se divide con el negocio: no participa de
+  // venta bruta, comision, costo de insumos ni ganancia neta. Puede pagarse
+  // en un metodo distinto al del servicio (ej. servicio con tarjeta, propina
+  // en efectivo), por eso lleva su propio metodo_pago.
+  propina             Int         @default(0)
+  propina_metodo_pago MetodoPago?
+  anulada             Boolean     @default(false)
+  motivo_anulacion    String?     @db.VarChar(200)
+  editado_por         Int?
+  fecha_edicion       DateTime?
 
   servicio   Servicio @relation(fields: [servicio_id], references: [id])
   usuario    Usuario  @relation("VentaUsuario", fields: [usuario_id], references: [id])
@@ -145,23 +151,23 @@ enum TipoMedida {
 }
 
 model Insumo {
-  id   Int        @id @default(autoincrement())
-  nombre String   @db.VarChar(120)
-  tipo TipoInsumo @default(consumible)
+  id                   Int         @id @default(autoincrement())
+  nombre               String      @db.VarChar(120)
+  tipo                 TipoInsumo  @default(consumible)
   // Solo consumibles tienen tipo_medida; una herramienta se cuenta siempre
   // como unidades enteras, sin necesidad de distinguirlo.
-  tipo_medida TipoMedida?
+  tipo_medida          TipoMedida?
   // Como se compra en la tienda (ej: frasco, paquete, rollo, caja, unidad).
-  unidad_compra String @db.VarChar(20)
+  unidad_compra        String      @db.VarChar(20)
   // Cuanto trae cada unidad de compra, en tipo_medida (ej: un frasco de
   // esmalte trae 15 ml). Para herramientas no se usa (se compran en
   // unidades enteras, sin conversion).
-  contenido_por_compra Decimal @db.Decimal(10, 2) @default(1)
+  contenido_por_compra Decimal     @default(1) @db.Decimal(10, 2)
   // Decimal(10,4), igual que Receta.cantidad_usada: un consumible que se
   // descuenta 0.003 por servicio necesita esa precision para que el
   // descuento no se redondee a 0 en cada venta.
-  stock_actual Decimal @db.Decimal(10, 4)
-  stock_minimo Decimal @db.Decimal(10, 4)
+  stock_actual         Decimal     @db.Decimal(10, 4)
+  stock_minimo         Decimal     @db.Decimal(10, 4)
 
   recetas Receta[]
   compras Compra[]

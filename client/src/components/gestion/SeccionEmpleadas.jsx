@@ -16,8 +16,6 @@ const PERMISOS_VACIO = {
 
 const NUEVO_VACIO = {
   nombre: '',
-  email_recuperacion: '',
-  password: '',
   sede_id: '',
   porcentaje_comision: '',
   ...PERMISOS_VACIO,
@@ -57,8 +55,8 @@ export default function SeccionEmpleadas() {
     e.preventDefault();
     setError('');
 
-    if (!nuevo.nombre || !nuevo.email_recuperacion || !nuevo.password || !nuevo.sede_id) {
-      setError('Nombre, correo, contraseña y sede son requeridos');
+    if (!nuevo.nombre || !nuevo.sede_id) {
+      setError('Nombre y sede son requeridos');
       return;
     }
 
@@ -66,8 +64,6 @@ export default function SeccionEmpleadas() {
     try {
       await api.post('/usuarios', {
         nombre: nuevo.nombre,
-        email_recuperacion: nuevo.email_recuperacion,
-        password: nuevo.password,
         sede_id: Number(nuevo.sede_id),
         porcentaje_comision: Number(nuevo.porcentaje_comision || 0) / 100,
         ...Object.fromEntries(Object.keys(PERMISOS_VACIO).map((campo) => [campo, nuevo[campo]])),
@@ -87,7 +83,6 @@ export default function SeccionEmpleadas() {
     setEdicion({
       nombre: empleada.nombre,
       email_recuperacion: empleada.email_recuperacion,
-      password: '',
       sede_id: String(empleada.sede_id),
       porcentaje_comision: String(Math.round(empleada.porcentaje_comision * 100)),
       ...Object.fromEntries(Object.keys(PERMISOS_VACIO).map((campo) => [campo, Boolean(empleada[campo])])),
@@ -99,7 +94,6 @@ export default function SeccionEmpleadas() {
     try {
       await api.put(`/usuarios/${id}`, {
         nombre: edicion.nombre,
-        email_recuperacion: edicion.email_recuperacion,
         sede_id: Number(edicion.sede_id),
         porcentaje_comision: Number(edicion.porcentaje_comision || 0) / 100,
         ...Object.fromEntries(Object.keys(PERMISOS_VACIO).map((campo) => [campo, edicion[campo]])),
@@ -147,7 +141,7 @@ export default function SeccionEmpleadas() {
 
         {formAbierto && (
           <form onSubmit={handleCrear} className="mt-4 flex flex-col gap-3 border-t border-borde-tarjeta pt-4">
-            <CamposEmpleada valores={nuevo} onChange={setNuevo} sedes={sedes} incluirPassword />
+            <CamposEmpleada valores={nuevo} onChange={setNuevo} sedes={sedes} esNueva />
             {error && <p className="text-sm text-red-600">{error}</p>}
             <div className="flex gap-2">
               <button

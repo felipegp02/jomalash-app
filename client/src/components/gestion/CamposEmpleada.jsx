@@ -13,7 +13,11 @@ const PERMISOS = [
   { campo: 'gestiona_empleadas', etiqueta: 'Gestionar empleadas' },
 ];
 
-export default function CamposEmpleada({ valores, onChange, sedes, incluirPassword }) {
+// Una empleada no tiene login propio: al crear no se pide correo ni
+// contraseña (el backend los genera solos). Al editar, el correo generado
+// se muestra de solo lectura -- es un identificador interno, no algo que
+// el admin deba escribir o corregir a mano.
+export default function CamposEmpleada({ valores, onChange, sedes, esNueva }) {
   function set(campo, valor) {
     onChange({ ...valores, [campo]: valor });
   }
@@ -25,26 +29,10 @@ export default function CamposEmpleada({ valores, onChange, sedes, incluirPasswo
         <input value={valores.nombre} onChange={(e) => set('nombre', e.target.value)} className={campoInput} />
       </div>
 
-      <div className="col-span-2 flex flex-col gap-1">
-        <label className={campoLabel}>Correo</label>
-        <input
-          type="email"
-          value={valores.email_recuperacion}
-          onChange={(e) => set('email_recuperacion', e.target.value)}
-          className={campoInput}
-        />
-      </div>
-
-      {incluirPassword && (
+      {!esNueva && (
         <div className="col-span-2 flex flex-col gap-1">
-          <label className={campoLabel}>Contrasena inicial</label>
-          <input
-            type="password"
-            value={valores.password}
-            onChange={(e) => set('password', e.target.value)}
-            className={campoInput}
-            placeholder="Minimo 8 caracteres"
-          />
+          <label className={campoLabel}>Correo (interno, de solo lectura)</label>
+          <input type="email" value={valores.email_recuperacion} disabled className={`${campoInput} bg-crema text-texto-secundario`} />
         </div>
       )}
 

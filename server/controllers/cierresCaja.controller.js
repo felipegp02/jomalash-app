@@ -1,6 +1,20 @@
 const prisma = require('../lib/prisma');
 const { costoPromedioInsumos, costoInsumosDeVentas } = require('../utils/costos');
 const { gastosPorCategoriaDe } = require('../utils/gastos');
+const { METODOS_PAGO, porMetodoPagoDe } = require('../utils/ventas');
+
+// Propina por metodo de pago (puede diferir del metodo de pago del
+// servicio): importa para cuadrar el efectivo fisico de la caja, aunque la
+// propina nunca entra a totalVenta/totalNeto.
+function propinaPorMetodoPagoDe(ventas) {
+  const base = new Map(METODOS_PAGO.map((m) => [m, { metodo_pago: m, propina: 0 }]));
+  for (const v of ventas) {
+    if (v.propina > 0) {
+      base.get(v.propina_metodo_pago).propina += v.propina;
+    }
+  }
+  return [...base.values()];
+}
 
 // Colombia no tiene horario de verano: el offset UTC-5 es constante todo el ano.
 const OFFSET_BOGOTA_MS = 5 * 60 * 60 * 1000;
@@ -64,6 +78,13 @@ async function calcularSnapshot(sedeId, fecha) {
 
   const totalNeto = totalVenta - comisionTotal - costoInsumos - gastoTotal;
 
+  // Desde aca: informativo puro, no participa de totalNeto. porMetodoPago ya
+  // usa precio_total (venta del servicio); la propina se desglosa aparte por
+  // su propio metodo de pago, sin sumarse nunca a totalVenta.
+  const porMetodoPago = porMetodoPagoDe(ventas);
+  const propinaTotal = ventas.reduce((suma, v) => suma + v.propina, 0);
+  const propinaPorMetodoPago = propinaPorMetodoPagoDe(ventas);
+
   return {
     fecha: fechaColumna,
     totalServicios,
@@ -73,6 +94,9 @@ async function calcularSnapshot(sedeId, fecha) {
     gastoTotal,
     gastosPorCategoria,
     totalNeto,
+    porMetodoPago,
+    propinaTotal,
+    propinaPorMetodoPago,
   };
 }
 

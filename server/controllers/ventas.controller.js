@@ -50,7 +50,7 @@ async function listar(req, res) {
 
 // POST /ventas (RF-05, RF-06, RF-07, RF-08, RF-10, RNF-03, RNF-10)
 async function crear(req, res) {
-  const { servicio_id, precio_total, metodo_pago } = req.body || {};
+  const { servicio_id, precio_total, metodo_pago, fecha, propina, propina_metodo_pago } = req.body || {};
 
   if (!servicio_id) {
     return res.status(400).json({ error: 'El servicio es requerido' });
@@ -58,6 +58,38 @@ async function crear(req, res) {
 
   if (!METODOS_PAGO.includes(metodo_pago)) {
     return res.status(400).json({ error: 'El metodo de pago debe ser efectivo, transferencia o tarjeta' });
+  }
+
+  // Fecha retroactiva (solo Admin, ver ventas.routes.js): "YYYY-MM-DD" tal
+  // como la elige el form, fijada al mediodia de Bogota para que caiga sin
+  // ambiguedad dentro de ese dia civil en cualquier calculo que la use
+  // despues (Cierre de Caja, Dashboard, Nomina). Si no viene, no se toca
+  // data.fecha mas abajo: sigue siendo @default(now()) tal cual hoy.
+  let fechaVenta;
+  if (fecha) {
+    if (req.user.rol !== 'admin') {
+      return res.status(403).json({ error: 'Solo un administrador puede registrar una venta con fecha retroactiva' });
+    }
+    fechaVenta = new Date(`${fecha}T17:00:00.000Z`);
+    if (Number.isNaN(fechaVenta.getTime()) || fechaVenta.getTime() > Date.now()) {
+      return res.status(400).json({ error: 'La fecha debe ser una fecha valida, no futura' });
+    }
+  }
+
+  // Propina: 100% para la empleada, opcional. Si se indica un monto, el
+  // metodo de pago de la propina es requerido (puede diferir del metodo de
+  // pago del servicio).
+  let propinaNum = 0;
+  let propinaMetodo;
+  if (propina !== undefined && propina !== null && propina !== '') {
+    propinaNum = Number(propina);
+    if (!Number.isFinite(propinaNum) || propinaNum <= 0) {
+      return res.status(400).json({ error: 'La propina debe ser un número positivo' });
+    }
+    if (!METODOS_PAGO.includes(propina_metodo_pago)) {
+      return res.status(400).json({ error: 'El metodo de pago de la propina debe ser efectivo, transferencia o tarjeta' });
+    }
+    propinaMetodo = propina_metodo_pago;
   }
 
   const servicio = await prisma.servicio.findUnique({ where: { id: Number(servicio_id) } });
@@ -109,6 +141,9 @@ async function crear(req, res) {
         precio_total: total,
         comision,
         metodo_pago,
+        propina: propinaNum,
+        propina_metodo_pago: propinaMetodo,
+        ...(fechaVenta ? { fecha: fechaVenta } : {}),
       },
       include: ventaConRelaciones,
     });

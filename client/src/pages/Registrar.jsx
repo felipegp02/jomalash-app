@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../api/client';
 import Toast from '../components/Toast';
-import { formatearHora, formatearMoneda } from '../utils/formato';
+import { etiquetaDia, formatearHora, formatearMoneda } from '../utils/formato';
 
 const campoLabel = 'text-sm font-medium text-texto-secundario';
 const campoInput =
@@ -24,6 +24,10 @@ export default function Registrar({ onVentaGuardada }) {
   const [empleadaId, setEmpleadaId] = useState('');
   const [total, setTotal] = useState('');
   const [metodoPago, setMetodoPago] = useState('');
+  const [fecha, setFecha] = useState('');
+  const [propinaAbierta, setPropinaAbierta] = useState(false);
+  const [propinaMonto, setPropinaMonto] = useState('');
+  const [propinaMetodoPago, setPropinaMetodoPago] = useState('');
   const [enviando, setEnviando] = useState(false);
   const [error, setError] = useState('');
   const [resumen, setResumen] = useState(null);
@@ -69,6 +73,10 @@ export default function Registrar({ onVentaGuardada }) {
       setError('Selecciona un metodo de pago');
       return;
     }
+    if (propinaMonto && !propinaMetodoPago) {
+      setError('Selecciona el metodo de pago de la propina');
+      return;
+    }
 
     setEnviando(true);
     try {
@@ -79,6 +87,13 @@ export default function Registrar({ onVentaGuardada }) {
       };
       if (esAdmin) {
         body.usuario_id = Number(empleadaId);
+        // Fecha retroactiva: solo Admin la ve (ver Registrar.jsx mas abajo).
+        // Vacio = hoy, mismo comportamiento que siempre.
+        if (fecha) body.fecha = fecha;
+      }
+      if (propinaMonto) {
+        body.propina = Number(propinaMonto);
+        body.propina_metodo_pago = propinaMetodoPago;
       }
 
       const data = await api.post('/ventas', body);
@@ -88,8 +103,10 @@ export default function Registrar({ onVentaGuardada }) {
         servicio: data.venta.servicio.nombre,
         empleada: data.venta.usuario.nombre,
         total: data.venta.precio_total,
-        hora: formatearHora(data.venta.fecha),
+        fecha: data.venta.fecha,
         metodoPago: data.venta.metodo_pago,
+        propina: data.venta.propina,
+        propinaMetodoPago: data.venta.propina_metodo_pago,
       });
       mostrarToast();
       onVentaGuardada?.();
@@ -98,6 +115,10 @@ export default function Registrar({ onVentaGuardada }) {
       setEmpleadaId('');
       setTotal('');
       setMetodoPago('');
+      setFecha('');
+      setPropinaAbierta(false);
+      setPropinaMonto('');
+      setPropinaMetodoPago('');
     } catch (err) {
       setError(err.message);
     } finally {
@@ -151,6 +172,22 @@ export default function Registrar({ onVentaGuardada }) {
           </div>
         )}
 
+        {esAdmin && (
+          <div className="flex flex-col gap-1.5">
+            <label htmlFor="fecha" className={campoLabel}>
+              Fecha (dejar vacio para hoy)
+            </label>
+            <input
+              id="fecha"
+              type="date"
+              value={fecha}
+              max={new Date().toISOString().slice(0, 10)}
+              onChange={(e) => setFecha(e.target.value)}
+              className={campoInput}
+            />
+          </div>
+        )}
+
         <div className="flex flex-col gap-1.5">
           <label htmlFor="total" className={campoLabel}>
             Total
@@ -187,6 +224,58 @@ export default function Registrar({ onVentaGuardada }) {
           </div>
         </div>
 
+        {propinaAbierta ? (
+          <div className="flex flex-col gap-3 rounded-xl border border-borde-tarjeta p-3">
+            <div className="flex items-center justify-between">
+              <span className={campoLabel}>Propina (100% para la empleada)</span>
+              <button
+                type="button"
+                onClick={() => {
+                  setPropinaAbierta(false);
+                  setPropinaMonto('');
+                  setPropinaMetodoPago('');
+                }}
+                className="text-xs font-medium text-texto-secundario hover:text-texto"
+              >
+                Quitar
+              </button>
+            </div>
+            <input
+              type="number"
+              min="1"
+              step="1"
+              value={propinaMonto}
+              onChange={(e) => setPropinaMonto(e.target.value)}
+              placeholder="Monto de la propina"
+              className={campoInput}
+            />
+            <div className="grid grid-cols-3 gap-2">
+              {METODOS_PAGO.map((m) => (
+                <button
+                  key={m.valor}
+                  type="button"
+                  onClick={() => setPropinaMetodoPago(m.valor)}
+                  className={`rounded-xl border px-2 py-2 text-xs font-medium transition-colors ${
+                    propinaMetodoPago === m.valor
+                      ? 'border-dorado bg-dorado-fondo text-texto'
+                      : 'border-borde-tarjeta bg-white text-texto-secundario hover:text-texto'
+                  }`}
+                >
+                  {m.etiqueta}
+                </button>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setPropinaAbierta(true)}
+            className="w-fit text-sm font-medium text-dorado hover:opacity-80"
+          >
+            + Agregar propina
+          </button>
+        )}
+
         {error && <p className="text-sm text-red-600">{error}</p>}
 
         <button
@@ -207,7 +296,15 @@ export default function Registrar({ onVentaGuardada }) {
           <p className="text-sm text-texto-secundario">
             Pago: {METODOS_PAGO.find((m) => m.valor === resumen.metodoPago)?.etiqueta}
           </p>
-          <p className="text-sm text-texto-secundario">Hora: {resumen.hora}</p>
+          {resumen.propina > 0 && (
+            <p className="text-sm text-texto-secundario">
+              Propina: {formatearMoneda(resumen.propina)} (
+              {METODOS_PAGO.find((m) => m.valor === resumen.propinaMetodoPago)?.etiqueta})
+            </p>
+          )}
+          <p className="text-sm text-texto-secundario">
+            {etiquetaDia(resumen.fecha)} · {formatearHora(resumen.fecha)}
+          </p>
         </div>
       )}
 
