@@ -237,7 +237,11 @@ async function dias(req, res) {
       return {
         fecha: d.fecha,
         servicios: d.servicios,
-        ventaBruta: d.ventaBruta,
+        // Si el dia ya esta cerrado, se usa la venta bruta que quedo
+        // guardada en el cierre (RF-22: snapshot fijo), no la recalculada en
+        // vivo -- pueden diferir si despues se edito/anulo una venta de ese
+        // dia. Mismo criterio que ya usa preview.cierre en SeccionCierre.jsx.
+        ventaBruta: cierre ? cierre.total_venta : d.ventaBruta,
         cerrado: Boolean(cierre),
         totalNeto: cierre ? cierre.total_neto : null,
       };

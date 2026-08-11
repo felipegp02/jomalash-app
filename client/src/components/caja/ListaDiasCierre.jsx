@@ -84,6 +84,9 @@ export default function ListaDiasCierre({ sedeId, onSeleccionarFecha }) {
                   {formatearMoneda(d.cerrado ? d.totalNeto : d.ventaBruta)}
                 </p>
                 <p className="text-xs text-texto-secundario">{d.cerrado ? 'neto' : 'venta bruta'}</p>
+                {d.cerrado && (
+                  <p className="text-xs text-texto-secundario">{formatearMoneda(d.ventaBruta)} venta bruta</p>
+                )}
               </div>
             </button>
           ))}
