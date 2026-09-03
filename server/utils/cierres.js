@@ -13,4 +13,6 @@ async function diaYaCerrado(sedeId, fecha) {
   return Boolean(cierre);
 }
 
-module.exports = { diaYaCerrado };
+const MENSAJE_DIA_CERRADO = 'Este día ya tiene la caja cerrada, no se pueden registrar más ventas';
+
+module.exports = { diaYaCerrado, MENSAJE_DIA_CERRADO };

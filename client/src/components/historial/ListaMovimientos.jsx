@@ -22,7 +22,40 @@ function agruparPorDia(ventas) {
   return grupos;
 }
 
-function FilaMovimiento({ venta, esAdmin, expandido, onToggle, onCambio }) {
+// Las lineas de un mismo Cobro (2+ servicios o pago dividido) ya llegan
+// consecutivas (mismo orden que /ventas, por fecha) porque se crean juntas.
+// Se arma un item "cobro" que las agrupa visualmente en vez de mostrar cada
+// una suelta con su propio metodo de pago (que ya no tienen: el pago vive
+// en el cobro, ver server/prisma/schema.prisma).
+function agruparPorCobro(ventas) {
+  const items = [];
+  const indicePorCobro = new Map();
+
+  for (const venta of ventas) {
+    if (!venta.cobro_id) {
+      items.push({ tipo: 'suelta', venta });
+      continue;
+    }
+    if (indicePorCobro.has(venta.cobro_id)) {
+      items[indicePorCobro.get(venta.cobro_id)].ventas.push(venta);
+    } else {
+      indicePorCobro.set(venta.cobro_id, items.length);
+      items.push({ tipo: 'cobro', cobro: venta.cobro, ventas: [venta] });
+    }
+  }
+
+  return items;
+}
+
+function desglosePago(cobro) {
+  const partes = [];
+  if (cobro.pago_efectivo > 0) partes.push(`Efectivo ${formatearMoneda(cobro.pago_efectivo)}`);
+  if (cobro.pago_transferencia > 0) partes.push(`Transferencia ${formatearMoneda(cobro.pago_transferencia)}`);
+  if (cobro.pago_tarjeta > 0) partes.push(`Tarjeta ${formatearMoneda(cobro.pago_tarjeta)}`);
+  return partes.join(' + ');
+}
+
+function FilaMovimiento({ venta, esAdmin, ocultarMetodoPago, expandido, onToggle, onCambio }) {
   // RF-09: solo Admin puede editar/anular, y solo si la venta no está ya
   // anulada. Una venta anulada igual se puede expandir para ver quien la
   // anulo y por que (RNF-11: trazabilidad visible, no solo guardada).
@@ -50,9 +83,11 @@ function FilaMovimiento({ venta, esAdmin, expandido, onToggle, onCambio }) {
             <span>{venta.usuario.nombre}</span>
             <span>·</span>
             <span>{formatearHora(venta.fecha)}</span>
-            <span className="rounded-full bg-crema px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-texto-secundario">
-              {ETIQUETAS_METODO[venta.metodo_pago] || venta.metodo_pago}
-            </span>
+            {!ocultarMetodoPago && (
+              <span className="rounded-full bg-crema px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-texto-secundario">
+                {ETIQUETAS_METODO[venta.metodo_pago] || venta.metodo_pago}
+              </span>
+            )}
             {venta.propina > 0 && (
               <span className="rounded-full bg-dorado-fondo px-1.5 py-0.5 text-[10px] font-medium text-dorado">
                 + propina {ETIQUETAS_METODO[venta.propina_metodo_pago] || venta.propina_metodo_pago}
@@ -108,6 +143,7 @@ function FilaMovimiento({ venta, esAdmin, expandido, onToggle, onCambio }) {
           ) : (
             <PanelEdicionVenta
               venta={venta}
+              ocultarMetodoPago={ocultarMetodoPago}
               onCerrar={() => onToggle(null)}
               onGuardado={() => {
                 onToggle(null);
@@ -121,6 +157,30 @@ function FilaMovimiento({ venta, esAdmin, expandido, onToggle, onCambio }) {
   );
 }
 
+function GrupoCobro({ cobro, ventas, esAdmin, expandidoId, onToggle, onCambio }) {
+  return (
+    <div className="rounded-[20px] border border-borde-tarjeta bg-white shadow-sm">
+      <div className="flex items-center justify-between px-4 pt-3 text-xs text-texto-secundario">
+        <span>{ventas.length} servicios en un mismo cobro</span>
+        <span className="font-medium">{desglosePago(cobro)}</span>
+      </div>
+      <div className="mt-2 divide-y divide-borde-tarjeta">
+        {ventas.map((venta) => (
+          <FilaMovimiento
+            key={venta.id}
+            venta={venta}
+            esAdmin={esAdmin}
+            ocultarMetodoPago
+            expandido={expandidoId === venta.id}
+            onToggle={onToggle}
+            onCambio={onCambio}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export default function ListaMovimientos({ ventas, esAdmin, onCambio }) {
   const [expandidoId, setExpandidoId] = useState(null);
 
@@ -129,28 +189,45 @@ export default function ListaMovimientos({ ventas, esAdmin, onCambio }) {
   }
 
   const grupos = agruparPorDia(ventas);
+  const onToggle = (id) => setExpandidoId(id === expandidoId ? null : id);
 
   return (
     <div className="flex flex-col gap-5">
-      {grupos.map((grupo) => (
-        <div key={grupo.etiqueta}>
-          <p className="mb-2 px-1 text-xs font-semibold uppercase tracking-wide text-texto-secundario">
-            {grupo.etiqueta}
-          </p>
-          <div className="divide-y divide-borde-tarjeta rounded-[20px] border border-borde-tarjeta bg-white shadow-sm">
-            {grupo.ventas.map((venta) => (
-              <FilaMovimiento
-                key={venta.id}
-                venta={venta}
-                esAdmin={esAdmin}
-                expandido={expandidoId === venta.id}
-                onToggle={(id) => setExpandidoId(id === expandidoId ? null : id)}
-                onCambio={onCambio}
-              />
-            ))}
+      {grupos.map((grupo) => {
+        const items = agruparPorCobro(grupo.ventas);
+        return (
+          <div key={grupo.etiqueta}>
+            <p className="mb-2 px-1 text-xs font-semibold uppercase tracking-wide text-texto-secundario">
+              {grupo.etiqueta}
+            </p>
+            <div className="flex flex-col gap-3">
+              {items.map((item) =>
+                item.tipo === 'cobro' ? (
+                  <GrupoCobro
+                    key={`cobro-${item.cobro.id}`}
+                    cobro={item.cobro}
+                    ventas={item.ventas}
+                    esAdmin={esAdmin}
+                    expandidoId={expandidoId}
+                    onToggle={onToggle}
+                    onCambio={onCambio}
+                  />
+                ) : (
+                  <div key={item.venta.id} className="divide-y divide-borde-tarjeta rounded-[20px] border border-borde-tarjeta bg-white shadow-sm">
+                    <FilaMovimiento
+                      venta={item.venta}
+                      esAdmin={esAdmin}
+                      expandido={expandidoId === item.venta.id}
+                      onToggle={onToggle}
+                      onCambio={onCambio}
+                    />
+                  </div>
+                ),
+              )}
+            </div>
           </div>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }

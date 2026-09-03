@@ -37,6 +37,7 @@ model Sede {
   cierresCaja CierreCaja[]
   pagosNomina PagoNomina[]
   gastos      Gasto[]
+  cobros      Cobro[]
 
   @@map("SEDES")
 }
@@ -115,7 +116,14 @@ model Venta {
   sede_id             Int
   precio_total        Int
   comision            Int
-  metodo_pago         MetodoPago  @default(efectivo)
+  // Nulo cuando la venta pertenece a un Cobro con pago dividido/agrupado: en
+  // ese caso el metodo de pago vive en el Cobro (ver mas abajo), no por
+  // linea, porque una misma visita puede pagarse repartido entre metodos sin
+  // que el reparto tenga que coincidir con que linea especifica se pago con
+  // cual. Una venta suelta (cobro_id nulo, el caso de siempre) sigue
+  // guardando su propio metodo_pago exactamente igual que antes.
+  metodo_pago         MetodoPago?
+  cobro_id            Int?
   // 100% para la empleada, nunca se divide con el negocio: no participa de
   // venta bruta, comision, costo de insumos ni ganancia neta. Puede pagarse
   // en un metodo distinto al del servicio (ej. servicio con tarjeta, propina
@@ -131,8 +139,29 @@ model Venta {
   usuario    Usuario  @relation("VentaUsuario", fields: [usuario_id], references: [id])
   sede       Sede     @relation(fields: [sede_id], references: [id])
   editadoPor Usuario? @relation("VentaEditadoPor", fields: [editado_por], references: [id])
+  cobro      Cobro?   @relation(fields: [cobro_id], references: [id])
 
   @@map("VENTAS")
+}
+
+// Agrupa 2+ VENTAS (ej. Manicure + Pedicure + Pestañas en una misma visita,
+// posiblemente con distintas empleadas) que se cobran juntas y cuyo pago
+// puede repartirse libremente entre metodos, sin atarlo a una linea
+// especifica. El caso simple (1 sola linea, 1 solo metodo) NO crea un
+// Cobro: sigue siendo una VENTA suelta con metodo_pago propio, identica a
+// como se guardaba antes de que existiera este modelo.
+model Cobro {
+  id                 Int      @id @default(autoincrement())
+  fecha              DateTime @default(now())
+  sede_id            Int
+  pago_efectivo      Int      @default(0)
+  pago_transferencia Int      @default(0)
+  pago_tarjeta       Int      @default(0)
+
+  ventas Venta[]
+  sede   Sede    @relation(fields: [sede_id], references: [id])
+
+  @@map("COBROS")
 }
 
 // Un consumible se descuenta automatico por receta al registrar una venta.
@@ -275,19 +304,25 @@ enum MetodoPagoNomina {
 }
 
 model PagoNomina {
-  id             Int              @id @default(autoincrement())
-  usuario_id     Int
-  sede_id        Int
-  fecha          DateTime         @default(now())
-  tipo           TipoPagoNomina
-  monto          Int
-  metodo_pago    MetodoPagoNomina
+  id                  Int               @id @default(autoincrement())
+  usuario_id          Int
+  sede_id             Int
+  fecha               DateTime          @default(now())
+  tipo                TipoPagoNomina
+  monto               Int
+  // Nulo cuando el pago se dividio entre efectivo y transferencia (ver los
+  // dos campos de abajo, que en ese caso deben sumar "monto"). Sin dividir
+  // (el caso de siempre), metodo_pago solo sigue describiendo el pago
+  // completo, igual que antes.
+  metodo_pago         MetodoPagoNomina?
+  monto_efectivo      Int?
+  monto_transferencia Int?
   // Solo tiene sentido para una liquidacion: que rango de trabajo cubre.
   // Un vale es un adelanto puntual, no cubre un periodo.
-  periodo_inicio DateTime?        @db.Date
-  periodo_fin    DateTime?        @db.Date
-  nota           String?          @db.VarChar(200)
-  registrado_por Int
+  periodo_inicio      DateTime?         @db.Date
+  periodo_fin         DateTime?         @db.Date
+  nota                String?           @db.VarChar(200)
+  registrado_por      Int
 
   usuario       Usuario @relation("PagoNominaUsuario", fields: [usuario_id], references: [id])
   sede          Sede    @relation(fields: [sede_id], references: [id])

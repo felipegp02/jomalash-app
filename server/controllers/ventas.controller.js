@@ -1,13 +1,14 @@
 const prisma = require('../lib/prisma');
-const { diaYaCerrado } = require('../utils/cierres');
-
-const MENSAJE_DIA_CERRADO = 'Este día ya tiene la caja cerrada, no se pueden registrar más ventas';
+const { diaYaCerrado, MENSAJE_DIA_CERRADO } = require('../utils/cierres');
 
 const ventaConRelaciones = {
   servicio: { select: { nombre: true, categoria: true } },
   usuario: { select: { nombre: true } },
   sede: { select: { nombre: true } },
   editadoPor: { select: { nombre: true } },
+  // Para lineas de un Cobro (metodo_pago null): el Historial necesita el
+  // desglose de pago del cobro para mostrarlo agrupado (ver ListaMovimientos.jsx).
+  cobro: { select: { id: true, pago_efectivo: true, pago_transferencia: true, pago_tarjeta: true } },
 };
 
 function toNumber(valor) {
@@ -51,125 +52,6 @@ async function listar(req, res) {
   res.json({ ventas });
 }
 
-// POST /ventas (RF-05, RF-06, RF-07, RF-08, RF-10, RNF-03, RNF-10)
-async function crear(req, res) {
-  const { servicio_id, precio_total, metodo_pago, fecha, propina, propina_metodo_pago } = req.body || {};
-
-  if (!servicio_id) {
-    return res.status(400).json({ error: 'El servicio es requerido' });
-  }
-
-  if (!METODOS_PAGO.includes(metodo_pago)) {
-    return res.status(400).json({ error: 'El metodo de pago debe ser efectivo, transferencia o tarjeta' });
-  }
-
-  // Fecha retroactiva (solo Admin, ver ventas.routes.js): "YYYY-MM-DD" tal
-  // como la elige el form, fijada al mediodia de Bogota para que caiga sin
-  // ambiguedad dentro de ese dia civil en cualquier calculo que la use
-  // despues (Cierre de Caja, Dashboard, Nomina). Si no viene, no se toca
-  // data.fecha mas abajo: sigue siendo @default(now()) tal cual hoy.
-  let fechaVenta;
-  if (fecha) {
-    if (req.user.rol !== 'admin') {
-      return res.status(403).json({ error: 'Solo un administrador puede registrar una venta con fecha retroactiva' });
-    }
-    fechaVenta = new Date(`${fecha}T17:00:00.000Z`);
-    if (Number.isNaN(fechaVenta.getTime()) || fechaVenta.getTime() > Date.now()) {
-      return res.status(400).json({ error: 'La fecha debe ser una fecha valida, no futura' });
-    }
-  }
-
-  // Propina: 100% para la empleada, opcional. Si se indica un monto, el
-  // metodo de pago de la propina es requerido (puede diferir del metodo de
-  // pago del servicio).
-  let propinaNum = 0;
-  let propinaMetodo;
-  if (propina !== undefined && propina !== null && propina !== '') {
-    propinaNum = Number(propina);
-    if (!Number.isFinite(propinaNum) || propinaNum <= 0) {
-      return res.status(400).json({ error: 'La propina debe ser un número positivo' });
-    }
-    if (!METODOS_PAGO.includes(propina_metodo_pago)) {
-      return res.status(400).json({ error: 'El metodo de pago de la propina debe ser efectivo, transferencia o tarjeta' });
-    }
-    propinaMetodo = propina_metodo_pago;
-  }
-
-  const servicio = await prisma.servicio.findUnique({ where: { id: Number(servicio_id) } });
-  if (!servicio || !servicio.activo) {
-    return res.status(400).json({ error: 'Servicio inválido' });
-  }
-
-  let usuarioAtiende;
-  if (req.user.rol === 'empleada') {
-    // Una empleada solo puede registrar ventas propias: se ignora cualquier
-    // usuario_id que venga en el body y se usa el de su sesión.
-    usuarioAtiende = await prisma.usuario.findUnique({ where: { id: req.user.id } });
-  } else {
-    const { usuario_id } = req.body || {};
-    if (!usuario_id) {
-      return res.status(400).json({ error: 'La empleada es requerida' });
-    }
-    usuarioAtiende = await prisma.usuario.findUnique({ where: { id: Number(usuario_id) } });
-  }
-
-  if (!usuarioAtiende || !usuarioAtiende.activo) {
-    return res.status(400).json({ error: 'Empleada inválida' });
-  }
-
-  const fechaEfectiva = fechaVenta || new Date();
-  if (await diaYaCerrado(usuarioAtiende.sede_id, fechaEfectiva)) {
-    return res.status(400).json({ error: MENSAJE_DIA_CERRADO });
-  }
-
-  // RF-05: la venta total se autocompleta desde el catalogo y es editable.
-  const total = precio_total === undefined || precio_total === null || precio_total === ''
-    ? servicio.precio
-    : Number(precio_total);
-
-  if (!Number.isFinite(total) || total <= 0) {
-    return res.status(400).json({ error: 'El total de la venta debe ser un número positivo' });
-  }
-
-  // RF-08 / RNF-03: la comision se calcula en el servidor, nunca se acepta desde el cliente.
-  const comision = Math.round(total * toNumber(usuarioAtiende.porcentaje_comision));
-
-  const receta = await prisma.receta.findMany({ where: { servicio_id: servicio.id } });
-
-  // RNF-10: registrar la venta y descontar insumos es una sola transacción atómica.
-  const venta = await prisma.$transaction(async (tx) => {
-    const nuevaVenta = await tx.venta.create({
-      data: {
-        servicio_id: servicio.id,
-        usuario_id: usuarioAtiende.id,
-        // RF-06: la sede se genera automaticamente, tomada de donde trabaja
-        // la empleada que atendio (no de la sesión de quien registra, ya que
-        // un admin puede registrar por cualquiera de las dos sedes).
-        sede_id: usuarioAtiende.sede_id,
-        precio_total: total,
-        comision,
-        metodo_pago,
-        propina: propinaNum,
-        propina_metodo_pago: propinaMetodo,
-        ...(fechaVenta ? { fecha: fechaVenta } : {}),
-      },
-      include: ventaConRelaciones,
-    });
-
-    for (const linea of receta) {
-      await tx.insumo.update({
-        where: { id: linea.insumo_id },
-        data: { stock_actual: { decrement: linea.cantidad_usada } },
-      });
-    }
-
-    return nuevaVenta;
-  });
-
-  // RF-07: resumen de confirmación (servicio, empleada, total, hora) va incluido en la respuesta.
-  res.status(201).json({ venta });
-}
-
 // PUT /ventas/:id (RF-09, RNF-11: editar o anular, dejando constancia de quien y cuando)
 async function actualizar(req, res) {
   const id = Number(req.params.id);
@@ -192,6 +74,16 @@ async function actualizar(req, res) {
 
   if (venta.anulada) {
     return res.status(400).json({ error: 'La venta ya está anulada' });
+  }
+
+  // El metodo de pago de una linea que pertenece a un Cobro vive en el
+  // Cobro (posiblemente repartido entre varios metodos), no por linea: no
+  // hay un valor unico que editar aca. Anular o editar el precio_total de
+  // esa linea individual si sigue permitido, igual que siempre.
+  if (metodo_pago !== undefined && venta.cobro_id) {
+    return res.status(400).json({
+      error: 'Esta venta forma parte de un cobro con varios servicios: el metodo de pago se edita a nivel del cobro completo, no por servicio individual',
+    });
   }
 
   if (anulada) {
@@ -257,4 +149,4 @@ async function actualizar(req, res) {
   res.json({ venta: actualizada });
 }
 
-module.exports = { listar, crear, actualizar };
+module.exports = { listar, actualizar, ventaConRelaciones };

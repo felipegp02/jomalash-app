@@ -75,24 +75,59 @@ async function resumen(req, res) {
   res.json({ empleadas: resultado });
 }
 
-// POST /nomina (Admin) - registra un vale o una liquidación.
+// POST /nomina (Admin) - registra un vale o una liquidación. El pago puede
+// ir con un solo metodo (metodo_pago, el caso de siempre) o dividido entre
+// efectivo y transferencia (monto_efectivo + monto_transferencia, que deben
+// sumar exactamente "monto") - nunca ambas formas a la vez.
 async function crear(req, res) {
-  const { usuario_id, sede_id, tipo, monto, metodo_pago, periodo_inicio, periodo_fin, nota } =
-    req.body || {};
+  const {
+    usuario_id,
+    sede_id,
+    tipo,
+    monto,
+    metodo_pago,
+    monto_efectivo,
+    monto_transferencia,
+    periodo_inicio,
+    periodo_fin,
+    nota,
+  } = req.body || {};
 
-  if (!usuario_id || !sede_id || !tipo || !monto || !metodo_pago) {
-    return res.status(400).json({ error: 'Empleada, sede, tipo, monto y metodo de pago son requeridos' });
+  if (!usuario_id || !sede_id || !tipo || !monto) {
+    return res.status(400).json({ error: 'Empleada, sede, tipo y monto son requeridos' });
   }
   if (!TIPOS_PAGO.includes(tipo)) {
     return res.status(400).json({ error: 'El tipo debe ser vale o liquidacion' });
-  }
-  if (!METODOS_PAGO.includes(metodo_pago)) {
-    return res.status(400).json({ error: 'El metodo de pago debe ser efectivo o transferencia' });
   }
 
   const montoNum = Number(monto);
   if (!Number.isFinite(montoNum) || montoNum <= 0) {
     return res.status(400).json({ error: 'El monto debe ser un número positivo' });
+  }
+
+  const dividido = monto_efectivo !== undefined || monto_transferencia !== undefined;
+
+  let metodoPagoFinal;
+  let montoEfectivoFinal;
+  let montoTransferenciaFinal;
+
+  if (dividido) {
+    if (metodo_pago) {
+      return res.status(400).json({ error: 'Elegí un solo método de pago o dividilo, no ambos' });
+    }
+    montoEfectivoFinal = Number(monto_efectivo) || 0;
+    montoTransferenciaFinal = Number(monto_transferencia) || 0;
+    if (montoEfectivoFinal < 0 || montoTransferenciaFinal < 0) {
+      return res.status(400).json({ error: 'Los montos divididos no pueden ser negativos' });
+    }
+    if (montoEfectivoFinal + montoTransferenciaFinal !== montoNum) {
+      return res.status(400).json({ error: 'La suma de efectivo y transferencia debe coincidir con el monto total' });
+    }
+  } else {
+    if (!METODOS_PAGO.includes(metodo_pago)) {
+      return res.status(400).json({ error: 'El metodo de pago debe ser efectivo o transferencia' });
+    }
+    metodoPagoFinal = metodo_pago;
   }
 
   const empleada = await prisma.usuario.findUnique({ where: { id: Number(usuario_id) } });
@@ -110,7 +145,9 @@ async function crear(req, res) {
     sede_id: sede.id,
     tipo,
     monto: montoNum,
-    metodo_pago,
+    metodo_pago: metodoPagoFinal,
+    monto_efectivo: montoEfectivoFinal,
+    monto_transferencia: montoTransferenciaFinal,
     nota: nota?.trim() ? nota.trim() : null,
     registrado_por: req.user.id,
   };

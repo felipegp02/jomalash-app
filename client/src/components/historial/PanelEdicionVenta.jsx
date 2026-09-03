@@ -12,7 +12,11 @@ const METODOS_PAGO = [
 
 // RF-09: editar (total/metodo de pago) o anular (con motivo) una venta ya
 // registrada, dejando constancia de quien y cuando (lo hace el backend).
-export default function PanelEdicionVenta({ venta, onGuardado, onCerrar }) {
+// ocultarMetodoPago: true para una linea que pertenece a un Cobro (2+
+// servicios o pago dividido) - el metodo de pago vive en el cobro completo,
+// no por linea, asi que no hay nada individual que editar aca (el backend
+// tambien lo rechaza si se intenta).
+export default function PanelEdicionVenta({ venta, ocultarMetodoPago, onGuardado, onCerrar }) {
   const [total, setTotal] = useState(String(venta.precio_total));
   const [metodoPago, setMetodoPago] = useState(venta.metodo_pago);
   const [guardando, setGuardando] = useState(false);
@@ -31,7 +35,9 @@ export default function PanelEdicionVenta({ venta, onGuardado, onCerrar }) {
 
     setGuardando(true);
     try {
-      await api.put(`/ventas/${venta.id}`, { precio_total: totalNum, metodo_pago: metodoPago });
+      const body = { precio_total: totalNum };
+      if (!ocultarMetodoPago) body.metodo_pago = metodoPago;
+      await api.put(`/ventas/${venta.id}`, body);
       onGuardado();
     } catch (err) {
       setError(err.message);
@@ -107,25 +113,31 @@ export default function PanelEdicionVenta({ venta, onGuardado, onCerrar }) {
         />
       </div>
 
-      <div className="flex flex-col gap-1">
-        <label className="text-sm font-medium text-texto-secundario">Metodo de pago</label>
-        <div className="grid grid-cols-3 gap-2">
-          {METODOS_PAGO.map((m) => (
-            <button
-              key={m.valor}
-              type="button"
-              onClick={() => setMetodoPago(m.valor)}
-              className={`rounded-xl border px-2 py-2 text-sm font-medium transition-colors ${
-                metodoPago === m.valor
-                  ? 'border-dorado bg-dorado-fondo text-texto'
-                  : 'border-borde-tarjeta bg-white text-texto-secundario hover:text-texto'
-              }`}
-            >
-              {m.etiqueta}
-            </button>
-          ))}
+      {ocultarMetodoPago ? (
+        <p className="text-xs text-texto-secundario">
+          Esta venta forma parte de un cobro con varios servicios: el método de pago se edita a nivel del cobro completo.
+        </p>
+      ) : (
+        <div className="flex flex-col gap-1">
+          <label className="text-sm font-medium text-texto-secundario">Metodo de pago</label>
+          <div className="grid grid-cols-3 gap-2">
+            {METODOS_PAGO.map((m) => (
+              <button
+                key={m.valor}
+                type="button"
+                onClick={() => setMetodoPago(m.valor)}
+                className={`rounded-xl border px-2 py-2 text-sm font-medium transition-colors ${
+                  metodoPago === m.valor
+                    ? 'border-dorado bg-dorado-fondo text-texto'
+                    : 'border-borde-tarjeta bg-white text-texto-secundario hover:text-texto'
+                }`}
+              >
+                {m.etiqueta}
+              </button>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
 
       {error && <p className="text-sm text-red-600">{error}</p>}
 

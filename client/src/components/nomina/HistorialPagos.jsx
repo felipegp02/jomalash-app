@@ -79,7 +79,9 @@ export default function HistorialPagos({ usuarioId, refrescarTrigger }) {
                     <p className="text-sm font-medium text-texto">
                       {ETIQUETA_TIPO[p.tipo]}
                       <span className="ml-2 text-xs font-normal text-texto-secundario">
-                        {ETIQUETA_METODO[p.metodo_pago]}
+                        {p.metodo_pago
+                          ? ETIQUETA_METODO[p.metodo_pago]
+                          : `Efectivo ${formatearMoneda(p.monto_efectivo)} + Transferencia ${formatearMoneda(p.monto_transferencia)}`}
                       </span>
                     </p>
                     <p className="text-xs text-texto-secundario">

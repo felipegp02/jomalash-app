@@ -141,6 +141,24 @@ async function totalesCompletos(ventas, costoPromedio, filtrosComunes, desde, ha
   return { ...base, costoInsumos, gastoTotal, gananciaNeta };
 }
 
+// En vista individual (una empleada), los Cobros no se cuentan: un Cobro
+// puede agrupar lineas de otras empleadas tambien (solo Admin puede armar
+// uno asi), y no hay forma confiable de atribuirle su pago a una sola
+// persona. Su desglose por metodo de pago sigue viniendo solo de sus ventas
+// sueltas, exactamente igual que antes de que existieran los Cobros. En
+// vista de equipo (sin filtro de empleada) si se suman, igual que en Cierre
+// de Caja.
+async function porMetodoPagoConRango(filtrosComunes, ventas, desde, hasta) {
+  if (filtrosComunes.usuario_id) {
+    return porMetodoPagoDe(ventas);
+  }
+
+  const where = { fecha: { gte: desde, lt: hasta } };
+  if (filtrosComunes.sede_id) where.sede_id = filtrosComunes.sede_id;
+  const cobros = await prisma.cobro.findMany({ where });
+  return porMetodoPagoDe(ventas, cobros);
+}
+
 function porSedeDe(ventas) {
   const mapa = new Map();
   for (const v of ventas) {
@@ -189,7 +207,7 @@ async function resumen(req, res) {
   const totales = await totalesCompletos(ventas, costoPromedio, filtros, desde, hasta);
   const avanceMeta = await calcularAvanceMeta(req, req.query);
   const porSede = porSedeDe(ventas);
-  const porMetodoPago = porMetodoPagoDe(ventas);
+  const porMetodoPago = await porMetodoPagoConRango(filtros, ventas, desde, hasta);
 
   // Tarjetas informativas nuevas, en paralelo: no participan de "totales" ni
   // de gananciaNeta (ver comentario arriba de comprasTotalEnRango).

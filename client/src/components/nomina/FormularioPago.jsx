@@ -18,6 +18,9 @@ export default function FormularioPago({ usuarioId, sedeId, onGuardado, onCancel
   const [tipo, setTipo] = useState('vale');
   const [monto, setMonto] = useState('');
   const [metodoPago, setMetodoPago] = useState('efectivo');
+  const [dividirPago, setDividirPago] = useState(false);
+  const [montoEfectivo, setMontoEfectivo] = useState('');
+  const [montoTransferencia, setMontoTransferencia] = useState('');
   const [periodoInicio, setPeriodoInicio] = useState('');
   const [periodoFin, setPeriodoFin] = useState('');
   const [nota, setNota] = useState('');
@@ -34,18 +37,32 @@ export default function FormularioPago({ usuarioId, sedeId, onGuardado, onCancel
       return;
     }
 
+    const body = {
+      usuario_id: usuarioId,
+      sede_id: sedeId,
+      tipo,
+      monto: montoNum,
+      periodo_inicio: tipo === 'liquidacion' && periodoInicio ? periodoInicio : undefined,
+      periodo_fin: tipo === 'liquidacion' && periodoFin ? periodoFin : undefined,
+      nota: nota.trim() || undefined,
+    };
+
+    if (dividirPago) {
+      const efectivoNum = Number(montoEfectivo) || 0;
+      const transferenciaNum = Number(montoTransferencia) || 0;
+      if (efectivoNum + transferenciaNum !== montoNum) {
+        setError(`La suma de efectivo y transferencia debe ser igual al monto total (${montoNum})`);
+        return;
+      }
+      body.monto_efectivo = efectivoNum;
+      body.monto_transferencia = transferenciaNum;
+    } else {
+      body.metodo_pago = metodoPago;
+    }
+
     setGuardando(true);
     try {
-      await api.post('/nomina', {
-        usuario_id: usuarioId,
-        sede_id: sedeId,
-        tipo,
-        monto: montoNum,
-        metodo_pago: metodoPago,
-        periodo_inicio: tipo === 'liquidacion' && periodoInicio ? periodoInicio : undefined,
-        periodo_fin: tipo === 'liquidacion' && periodoFin ? periodoFin : undefined,
-        nota: nota.trim() || undefined,
-      });
+      await api.post('/nomina', body);
       onGuardado();
     } catch (err) {
       setError(err.message);
@@ -82,22 +99,72 @@ export default function FormularioPago({ usuarioId, sedeId, onGuardado, onCancel
         className={campoInput}
       />
 
-      <div className="grid grid-cols-2 gap-2">
-        {METODOS_PAGO.map((m) => (
+      {dividirPago ? (
+        <div className="flex flex-col gap-2 rounded-xl border border-borde-tarjeta p-3">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-medium text-texto-secundario">Pago dividido</span>
+            <button
+              type="button"
+              onClick={() => {
+                setDividirPago(false);
+                setMontoEfectivo('');
+                setMontoTransferencia('');
+              }}
+              className="text-xs font-medium text-texto-secundario hover:text-texto"
+            >
+              Usar un solo metodo
+            </button>
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <div className="flex flex-col gap-1">
+              <label className="text-xs text-texto-secundario">Efectivo</label>
+              <input
+                type="number"
+                min="0"
+                value={montoEfectivo}
+                onChange={(e) => setMontoEfectivo(e.target.value)}
+                className={campoInput}
+              />
+            </div>
+            <div className="flex flex-col gap-1">
+              <label className="text-xs text-texto-secundario">Transferencia</label>
+              <input
+                type="number"
+                min="0"
+                value={montoTransferencia}
+                onChange={(e) => setMontoTransferencia(e.target.value)}
+                className={campoInput}
+              />
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div className="flex flex-col gap-2">
+          <div className="grid grid-cols-2 gap-2">
+            {METODOS_PAGO.map((m) => (
+              <button
+                key={m.valor}
+                type="button"
+                onClick={() => setMetodoPago(m.valor)}
+                className={`rounded-xl border px-2 py-2 text-sm font-medium transition-colors ${
+                  metodoPago === m.valor
+                    ? 'border-dorado bg-dorado-fondo text-texto'
+                    : 'border-borde-tarjeta bg-white text-texto-secundario hover:text-texto'
+                }`}
+              >
+                {m.etiqueta}
+              </button>
+            ))}
+          </div>
           <button
-            key={m.valor}
             type="button"
-            onClick={() => setMetodoPago(m.valor)}
-            className={`rounded-xl border px-2 py-2 text-sm font-medium transition-colors ${
-              metodoPago === m.valor
-                ? 'border-dorado bg-dorado-fondo text-texto'
-                : 'border-borde-tarjeta bg-white text-texto-secundario hover:text-texto'
-            }`}
+            onClick={() => setDividirPago(true)}
+            className="w-fit text-sm font-medium text-dorado hover:opacity-80"
           >
-            {m.etiqueta}
+            Dividir pago
           </button>
-        ))}
-      </div>
+        </div>
+      )}
 
       {tipo === 'liquidacion' && (
         <div className="flex flex-col gap-1">
