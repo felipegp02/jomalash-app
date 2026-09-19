@@ -19,28 +19,46 @@ function sumarVentasSueltas(base, ventas) {
   }
 }
 
-// Un Cobro con AL MENOS UNA linea activa se cuenta siempre completo, tal
-// como se cobro, sin importar si alguna de sus otras lineas fue anulada
-// despues (RNF confirmado: el desglose de caja no se recalcula por linea,
-// refleja lo que fisicamente entro a caja en el momento del cobro). Pero si
-// TODAS sus lineas quedaron anuladas, el cobro entero se excluye: la venta
-// bruta ya no le suma nada (sale de VENTAS con anulada:false) y el desglose
-// por metodo debe cuadrar siempre con la venta bruta. No suma a "servicios":
-// ese conteo por metodo solo tiene sentido para una venta suelta con un
-// metodo unico.
+// Regla dura: venta bruta debe coincidir siempre, sin excepcion, con la
+// suma efectivo+transferencia+tarjeta. Por eso un Cobro nunca aporta su
+// pago_* tal cual: se reduce a su "monto activo" (suma de precio_total de
+// sus lineas NO anuladas) y ese monto activo se reparte entre los metodos
+// en la misma proporcion en que se cobraron originalmente. Si ninguna
+// linea fue anulada, el reparto proporcional devuelve exactamente los
+// montos originales; si todas fueron anuladas, el monto activo es 0 y el
+// cobro no aporta nada. El ultimo metodo (por monto) absorbe el resto del
+// reparto para que la suma de los tres de exacto el monto activo, sin
+// arrastrar centavos de redondeo. No suma a "servicios": ese conteo por
+// metodo solo tiene sentido para una venta suelta con un metodo unico.
 function sumarCobros(base, cobros) {
   for (const c of cobros) {
-    if (c.ventas.every((v) => v.anulada)) continue;
-    base.get('efectivo').venta += c.pago_efectivo;
-    base.get('transferencia').venta += c.pago_transferencia;
-    base.get('tarjeta').venta += c.pago_tarjeta;
+    const totalLineas = c.ventas.reduce((suma, v) => suma + v.precio_total, 0);
+    if (totalLineas <= 0) continue;
+
+    const montoAnulado = c.ventas.reduce((suma, v) => suma + (v.anulada ? v.precio_total : 0), 0);
+    const montoActivo = totalLineas - montoAnulado;
+    if (montoActivo <= 0) continue;
+
+    const metodos = [
+      { key: 'efectivo', monto: c.pago_efectivo },
+      { key: 'transferencia', monto: c.pago_transferencia },
+      { key: 'tarjeta', monto: c.pago_tarjeta },
+    ].sort((a, b) => b.monto - a.monto);
+
+    let asignado = 0;
+    metodos.forEach((m, i) => {
+      const esUltimo = i === metodos.length - 1;
+      const valor = esUltimo ? montoActivo - asignado : Math.round((m.monto * montoActivo) / totalLineas);
+      asignado += valor;
+      base.get(m.key).venta += valor;
+    });
   }
 }
 
 // ventas: ya filtradas por sede/periodo/anulada segun corresponda a quien
 // llama. cobros: ya filtrados por sede/periodo, con sus ventas incluidas
-// (select anulada) para que sumarCobros pueda detectar el caso "todas
-// anuladas". Devuelve el array [{metodo_pago, servicios, venta}].
+// (select anulada y precio_total) para que sumarCobros pueda calcular el
+// monto activo real de cada cobro. Devuelve el array [{metodo_pago, servicios, venta}].
 function porMetodoPagoDe(ventas, cobros = []) {
   const base = baseVacia();
   sumarVentasSueltas(base, ventas);
