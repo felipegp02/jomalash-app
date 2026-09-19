@@ -16,7 +16,11 @@ const METODOS_PAGO = [
 // servicios o pago dividido) - el metodo de pago vive en el cobro completo,
 // no por linea, asi que no hay nada individual que editar aca (el backend
 // tambien lo rechaza si se intenta).
-export default function PanelEdicionVenta({ venta, ocultarMetodoPago, onGuardado, onCerrar }) {
+// bloquearAnulacion: true para una linea de un cobro con 2+ servicios - ya
+// no se puede anular una sola linea (ambiguedad de como quedo el pago
+// dividido), hay que anular el cobro completo desde GrupoCobro (el backend
+// tambien lo rechaza si se intenta).
+export default function PanelEdicionVenta({ venta, ocultarMetodoPago, bloquearAnulacion, onGuardado, onCerrar }) {
   const [total, setTotal] = useState(String(venta.precio_total));
   const [metodoPago, setMetodoPago] = useState(venta.metodo_pago);
   const [guardando, setGuardando] = useState(false);
@@ -139,6 +143,13 @@ export default function PanelEdicionVenta({ venta, ocultarMetodoPago, onGuardado
         </div>
       )}
 
+      {bloquearAnulacion && (
+        <p className="text-xs text-texto-secundario">
+          Este servicio forma parte de un cobro con varios servicios. Para anularlo, anulá el cobro completo (botón
+          arriba). Si la clienta se queda con algunos servicios, registrá un cobro nuevo con lo que corresponda.
+        </p>
+      )}
+
       {error && <p className="text-sm text-red-600">{error}</p>}
 
       <div className="flex flex-wrap gap-2">
@@ -150,13 +161,15 @@ export default function PanelEdicionVenta({ venta, ocultarMetodoPago, onGuardado
         >
           {guardando ? 'Guardando...' : 'Guardar cambios'}
         </button>
-        <button
-          type="button"
-          onClick={() => setAnulando(true)}
-          className="rounded-lg border border-rojo/40 px-4 py-2 text-sm font-medium text-rojo hover:bg-red-50"
-        >
-          Anular venta
-        </button>
+        {!bloquearAnulacion && (
+          <button
+            type="button"
+            onClick={() => setAnulando(true)}
+            className="rounded-lg border border-rojo/40 px-4 py-2 text-sm font-medium text-rojo hover:bg-red-50"
+          >
+            Anular venta
+          </button>
+        )}
         <button
           type="button"
           onClick={onCerrar}

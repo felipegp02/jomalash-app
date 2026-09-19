@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { IconCheck, IconX, IconChevronRight } from '../Icons';
 import { formatearHora, formatearMoneda, etiquetaDia } from '../../utils/formato';
+import { api } from '../../api/client';
 import SinDatos from '../dashboard/SinDatos';
 import PanelEdicionVenta from './PanelEdicionVenta';
 
@@ -55,7 +56,7 @@ function desglosePago(cobro) {
   return partes.join(' + ');
 }
 
-function FilaMovimiento({ venta, esAdmin, ocultarMetodoPago, expandido, onToggle, onCambio }) {
+function FilaMovimiento({ venta, esAdmin, ocultarMetodoPago, bloquearAnulacion, expandido, onToggle, onCambio }) {
   // RF-09: solo Admin puede editar/anular, y solo si la venta no está ya
   // anulada. Una venta anulada igual se puede expandir para ver quien la
   // anulo y por que (RNF-11: trazabilidad visible, no solo guardada).
@@ -144,6 +145,7 @@ function FilaMovimiento({ venta, esAdmin, ocultarMetodoPago, expandido, onToggle
             <PanelEdicionVenta
               venta={venta}
               ocultarMetodoPago={ocultarMetodoPago}
+              bloquearAnulacion={bloquearAnulacion}
               onCerrar={() => onToggle(null)}
               onGuardado={() => {
                 onToggle(null);
@@ -157,13 +159,103 @@ function FilaMovimiento({ venta, esAdmin, ocultarMetodoPago, expandido, onToggle
   );
 }
 
+// Anula TODAS las lineas del cobro de una vez (PUT /cobros/:id/anular): un
+// cobro de 2+ servicios ya no admite anular una sola linea, para no dejar
+// ambiguedad sobre como quedo repartido el pago entre metodos.
+function AnularCobro({ cobroId, onCancelar, onAnulado }) {
+  const [motivo, setMotivo] = useState('');
+  const [guardando, setGuardando] = useState(false);
+  const [error, setError] = useState('');
+
+  async function handleConfirmar() {
+    if (!motivo.trim()) {
+      setError('El motivo de anulacion es requerido');
+      return;
+    }
+    setError('');
+    setGuardando(true);
+    try {
+      await api.put(`/cobros/${cobroId}/anular`, { motivo });
+      onAnulado();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setGuardando(false);
+    }
+  }
+
+  return (
+    <div className="flex flex-col gap-3 border-t border-borde-tarjeta px-4 py-3">
+      <p className="text-sm font-medium text-texto">Anular este cobro completo</p>
+      <textarea
+        value={motivo}
+        onChange={(e) => setMotivo(e.target.value)}
+        placeholder="Motivo de la anulacion"
+        rows={2}
+        className="rounded-xl border border-borde-tarjeta bg-white px-3 py-2 text-sm text-texto outline-none focus:border-dorado focus:ring-2 focus:ring-dorado/20"
+      />
+      {error && <p className="text-sm text-red-600">{error}</p>}
+      <div className="flex flex-wrap gap-2">
+        <button
+          type="button"
+          onClick={handleConfirmar}
+          disabled={guardando}
+          className="rounded-lg bg-rojo px-4 py-2 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-60"
+        >
+          {guardando ? 'Anulando...' : 'Confirmar anulación del cobro'}
+        </button>
+        <button
+          type="button"
+          onClick={onCancelar}
+          className="rounded-lg border border-borde-tarjeta px-4 py-2 text-sm font-medium text-texto-secundario hover:text-texto"
+        >
+          Volver
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function GrupoCobro({ cobro, ventas, esAdmin, expandidoId, onToggle, onCambio }) {
+  const [anulandoCobro, setAnulandoCobro] = useState(false);
+
+  // La restriccion de "no anular linea por linea" solo aplica a un cobro con
+  // 2+ servicios: un cobro de 1 sola linea (pago dividido de un solo
+  // servicio) no tiene ambiguedad, se sigue anulando individual como siempre.
+  const esMultiServicio = ventas.length >= 2;
+  const hayLineaActiva = ventas.some((v) => !v.anulada);
+  const puedeAnularCobro = esAdmin && esMultiServicio && hayLineaActiva;
+
   return (
     <div className="rounded-[20px] border border-borde-tarjeta bg-white shadow-sm">
       <div className="flex items-center justify-between px-4 pt-3 text-xs text-texto-secundario">
         <span>{ventas.length} servicios en un mismo cobro</span>
         <span className="font-medium">{desglosePago(cobro)}</span>
       </div>
+
+      {puedeAnularCobro && !anulandoCobro && (
+        <div className="px-4 pt-2">
+          <button
+            type="button"
+            onClick={() => setAnulandoCobro(true)}
+            className="text-xs font-medium text-rojo hover:underline"
+          >
+            Anular cobro completo
+          </button>
+        </div>
+      )}
+
+      {anulandoCobro && (
+        <AnularCobro
+          cobroId={cobro.id}
+          onCancelar={() => setAnulandoCobro(false)}
+          onAnulado={() => {
+            setAnulandoCobro(false);
+            onCambio();
+          }}
+        />
+      )}
+
       <div className="mt-2 divide-y divide-borde-tarjeta">
         {ventas.map((venta) => (
           <FilaMovimiento
@@ -171,6 +263,7 @@ function GrupoCobro({ cobro, ventas, esAdmin, expandidoId, onToggle, onCambio })
             venta={venta}
             esAdmin={esAdmin}
             ocultarMetodoPago
+            bloquearAnulacion={esMultiServicio}
             expandido={expandidoId === venta.id}
             onToggle={onToggle}
             onCambio={onCambio}

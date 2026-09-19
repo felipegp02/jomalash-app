@@ -191,4 +191,69 @@ async function crear(req, res) {
   res.status(201).json({ ventas: resultado.ventas, cobro_id: resultado.cobroId });
 }
 
-module.exports = { crear };
+// PUT /cobros/:id/anular (Admin) - anula TODAS las lineas del cobro de una
+// sola vez (mismo motivo, mismo admin, misma fecha/hora), en vez de anular
+// una linea individual (ver ventas.controller.js: un cobro de 2+ servicios
+// ya no admite anulacion por linea, justamente para no dejar ambiguedad
+// sobre como quedo repartido el pago entre metodos). Si la clienta se queda
+// con parte de los servicios, se registra un cobro nuevo aparte con lo que
+// corresponda.
+async function anular(req, res) {
+  const id = Number(req.params.id);
+  const { motivo } = req.body || {};
+
+  const cobro = await prisma.cobro.findUnique({
+    where: { id },
+    include: { ventas: true },
+  });
+  if (!cobro) {
+    return res.status(404).json({ error: 'Cobro no encontrado' });
+  }
+
+  // Mismo criterio que ventas.controller.js: el dia del cobro (no el de hoy)
+  // es lo que importa, por si se esta corrigiendo un cobro viejo.
+  if (await diaYaCerrado(cobro.sede_id, cobro.fecha)) {
+    return res.status(400).json({ error: MENSAJE_DIA_CERRADO });
+  }
+
+  const lineasActivas = cobro.ventas.filter((v) => !v.anulada);
+  if (lineasActivas.length === 0) {
+    return res.status(400).json({ error: 'Este cobro ya está anulado' });
+  }
+
+  if (!motivo) {
+    return res.status(400).json({ error: 'El motivo de anulación es requerido' });
+  }
+
+  const ventasAnuladas = await prisma.$transaction(async (tx) => {
+    const resultado = [];
+    for (const linea of lineasActivas) {
+      const recetaDeLinea = await tx.receta.findMany({ where: { servicio_id: linea.servicio_id } });
+
+      const actualizada = await tx.venta.update({
+        where: { id: linea.id },
+        data: {
+          anulada: true,
+          motivo_anulacion: motivo,
+          editado_por: req.user.id,
+          fecha_edicion: new Date(),
+        },
+        include: ventaConRelaciones,
+      });
+      resultado.push(actualizada);
+
+      // Revierte el descuento de insumos aplicado al registrar cada linea.
+      for (const receta of recetaDeLinea) {
+        await tx.insumo.update({
+          where: { id: receta.insumo_id },
+          data: { stock_actual: { increment: receta.cantidad_usada } },
+        });
+      }
+    }
+    return resultado;
+  });
+
+  res.json({ ventas: ventasAnuladas });
+}
+
+module.exports = { crear, anular };

@@ -87,6 +87,21 @@ async function actualizar(req, res) {
   }
 
   if (anulada) {
+    // Un cobro de 2+ servicios ya no se anula linea por linea: hay que
+    // anular el cobro completo (PUT /cobros/:id/anular) para no dejar
+    // ambiguedad sobre como quedo repartido el pago entre los metodos. Un
+    // cobro de 1 sola linea (pago dividido pero un solo servicio) no entra
+    // aca: anular esa unica linea ya anula el cobro entero, sin ambiguedad.
+    if (venta.cobro_id) {
+      const lineasDelCobro = await prisma.venta.count({ where: { cobro_id: venta.cobro_id } });
+      if (lineasDelCobro >= 2) {
+        return res.status(400).json({
+          error:
+            'Esta venta forma parte de un cobro con varios servicios: no se puede anular una sola línea. Anulá el cobro completo, o si la clienta se queda con algunos servicios, registrá un cobro nuevo con lo que corresponda.',
+        });
+      }
+    }
+
     if (!motivo) {
       return res.status(400).json({ error: 'El motivo de anulación es requerido' });
     }
