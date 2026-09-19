@@ -53,6 +53,17 @@ export default function FiltrosHistorial({ usuario, sedes, servicios, empleadas,
         ))}
       </select>
 
+      <select
+        value={filtros.metodoPago}
+        onChange={(e) => actualizar('metodoPago', e.target.value)}
+        className={campoClase}
+      >
+        <option value="">Todos los métodos</option>
+        <option value="efectivo">Efectivo</option>
+        <option value="transferencia">Transferencia</option>
+        <option value="tarjeta">Tarjeta</option>
+      </select>
+
       <div className="flex items-center gap-2">
         <input
           type="date"

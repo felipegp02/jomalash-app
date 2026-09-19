@@ -29,6 +29,7 @@ export default function Historial() {
     sedeId: '',
     usuarioId: '',
     servicioId: '',
+    metodoPago: '',
     fechaDesde: inicioDeMesISO(),
     fechaHasta: hoyISO(),
   });
@@ -54,6 +55,7 @@ export default function Historial() {
     if (filtros.sedeId) params.set('sede_id', filtros.sedeId);
     if (filtros.usuarioId) params.set('usuario_id', filtros.usuarioId);
     if (filtros.servicioId) params.set('servicio_id', filtros.servicioId);
+    if (filtros.metodoPago) params.set('metodo_pago', filtros.metodoPago);
 
     setCargando(true);
     api
@@ -66,7 +68,7 @@ export default function Historial() {
     cargarVentas,
     // rango es un objeto nuevo en cada render; solo nos interesan sus valores.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [rango.desde.getTime(), rango.hasta.getTime(), filtros.sedeId, filtros.usuarioId, filtros.servicioId],
+    [rango.desde.getTime(), rango.hasta.getTime(), filtros.sedeId, filtros.usuarioId, filtros.servicioId, filtros.metodoPago],
   );
 
   return (

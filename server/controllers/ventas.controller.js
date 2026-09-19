@@ -20,9 +20,10 @@ function toNumber(valor) {
 
 const METODOS_PAGO = ['efectivo', 'transferencia', 'tarjeta'];
 
-// GET /ventas (RF-21: filtrable por empleada, sede, servicio y rango de fechas; empleada solo ve las suyas)
+// GET /ventas (RF-21: filtrable por empleada, sede, servicio, metodo de pago
+// y rango de fechas; empleada solo ve las suyas)
 async function listar(req, res) {
-  const { sede_id, usuario_id, servicio_id, desde, hasta } = req.query;
+  const { sede_id, usuario_id, servicio_id, metodo_pago, desde, hasta } = req.query;
   const where = {};
 
   if (req.user.rol === 'empleada') {
@@ -33,6 +34,20 @@ async function listar(req, res) {
 
   if (sede_id) where.sede_id = Number(sede_id);
   if (servicio_id) where.servicio_id = Number(servicio_id);
+
+  if (metodo_pago) {
+    if (!METODOS_PAGO.includes(metodo_pago)) {
+      return res.status(400).json({ error: 'El metodo de pago debe ser efectivo, transferencia o tarjeta' });
+    }
+    // Una venta suelta guarda su propio metodo_pago. Una linea de un Cobro
+    // (metodo_pago null) no tiene uno propio: el pago vive en el Cobro
+    // completo (posiblemente repartido entre varios metodos). Como TODAS las
+    // lineas de un mismo Cobro comparten esa misma relacion, si el cobro uso
+    // el metodo filtrado, la condicion se cumple para cada una de sus
+    // lineas por igual, y el cobro completo sale agrupado en la respuesta
+    // (igual que ya lo agrupa ListaMovimientos.jsx), sin logica extra aca.
+    where.OR = [{ metodo_pago }, { cobro: { [`pago_${metodo_pago}`]: { gt: 0 } } }];
+  }
 
   if (desde || hasta) {
     where.fecha = {};
