@@ -82,10 +82,12 @@ async function calcularSnapshot(sedeId, fecha) {
   // Desde aca: informativo puro, no participa de totalNeto. porMetodoPago ya
   // usa precio_total (venta del servicio); la propina se desglosa aparte por
   // su propio metodo de pago, sin sumarse nunca a totalVenta. Los Cobros
-  // (2+ lineas o pago dividido) se cuentan completos, sin importar si alguna
-  // de sus lineas fue anulada despues (ver utils/ventas.js).
+  // (2+ lineas o pago dividido) se cuentan completos si tienen alguna linea
+  // activa, sin importar si otra de sus lineas fue anulada despues; si TODAS
+  // sus lineas estan anuladas, se excluyen (ver utils/ventas.js).
   const cobros = await prisma.cobro.findMany({
     where: { sede_id: sedeId, fecha: { gte: inicio, lt: fin } },
+    include: { ventas: { select: { anulada: true } } },
   });
   const porMetodoPago = porMetodoPagoDe(ventas, cobros);
   const propinaTotal = ventas.reduce((suma, v) => suma + v.propina, 0);

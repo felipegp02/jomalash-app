@@ -155,7 +155,7 @@ async function porMetodoPagoConRango(filtrosComunes, ventas, desde, hasta) {
 
   const where = { fecha: { gte: desde, lt: hasta } };
   if (filtrosComunes.sede_id) where.sede_id = filtrosComunes.sede_id;
-  const cobros = await prisma.cobro.findMany({ where });
+  const cobros = await prisma.cobro.findMany({ where, include: { ventas: { select: { anulada: true } } } });
   return porMetodoPagoDe(ventas, cobros);
 }
 

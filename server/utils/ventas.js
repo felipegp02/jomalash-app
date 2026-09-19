@@ -19,13 +19,18 @@ function sumarVentasSueltas(base, ventas) {
   }
 }
 
-// Un Cobro se cuenta siempre completo, tal como se cobro, sin importar si
-// alguna de sus lineas fue anulada despues (RNF confirmado: el desglose de
-// caja no se recalcula, refleja lo que fisicamente entro a caja en el
-// momento del cobro). No suma a "servicios": ese conteo por metodo solo
-// tiene sentido para una venta suelta con un metodo unico.
+// Un Cobro con AL MENOS UNA linea activa se cuenta siempre completo, tal
+// como se cobro, sin importar si alguna de sus otras lineas fue anulada
+// despues (RNF confirmado: el desglose de caja no se recalcula por linea,
+// refleja lo que fisicamente entro a caja en el momento del cobro). Pero si
+// TODAS sus lineas quedaron anuladas, el cobro entero se excluye: la venta
+// bruta ya no le suma nada (sale de VENTAS con anulada:false) y el desglose
+// por metodo debe cuadrar siempre con la venta bruta. No suma a "servicios":
+// ese conteo por metodo solo tiene sentido para una venta suelta con un
+// metodo unico.
 function sumarCobros(base, cobros) {
   for (const c of cobros) {
+    if (c.ventas.every((v) => v.anulada)) continue;
     base.get('efectivo').venta += c.pago_efectivo;
     base.get('transferencia').venta += c.pago_transferencia;
     base.get('tarjeta').venta += c.pago_tarjeta;
@@ -33,8 +38,9 @@ function sumarCobros(base, cobros) {
 }
 
 // ventas: ya filtradas por sede/periodo/anulada segun corresponda a quien
-// llama. cobros: ya filtrados por sede/periodo (independiente de anulada,
-// ver sumarCobros). Devuelve el array [{metodo_pago, servicios, venta}].
+// llama. cobros: ya filtrados por sede/periodo, con sus ventas incluidas
+// (select anulada) para que sumarCobros pueda detectar el caso "todas
+// anuladas". Devuelve el array [{metodo_pago, servicios, venta}].
 function porMetodoPagoDe(ventas, cobros = []) {
   const base = baseVacia();
   sumarVentasSueltas(base, ventas);
