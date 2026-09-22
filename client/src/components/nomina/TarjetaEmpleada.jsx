@@ -46,6 +46,20 @@ function EstadoCorte({ corte }) {
 }
 
 function BloqueCorte({ titulo, corte }) {
+  // corte puede faltar un instante durante un despliegue en curso (frontend
+  // ya actualizado, backend todavia sirviendo la respuesta vieja): se avisa
+  // en vez de romper el render de toda la pagina de Nomina.
+  if (!corte) {
+    return (
+      <div className="rounded-xl border border-borde-tarjeta p-3">
+        <p className="text-xs font-semibold uppercase tracking-wide text-texto-secundario">{titulo}</p>
+        <p className="mt-2 text-sm text-texto-secundario">
+          No se pudo cargar este corte. Recargá la página en un momento.
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div className="rounded-xl border border-borde-tarjeta p-3">
       <p className="text-xs font-semibold uppercase tracking-wide text-texto-secundario">
