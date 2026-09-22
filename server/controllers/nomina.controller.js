@@ -1,15 +1,44 @@
 const prisma = require('../lib/prisma');
-const { diaCivilBogota, rangoMesBogota } = require('../utils/bogota');
+const { diaCivilBogota, rangosQuincenaBogota } = require('../utils/bogota');
 
 const TIPOS_PAGO = ['vale', 'liquidacion'];
 const METODOS_PAGO = ['efectivo', 'transferencia'];
 
+// Días trabajados, comisión ganada (de VENTAS), vales y liquidaciones
+// entregados, y saldo pendiente = ganado - vales - liquidaciones, todo
+// acotado a los registros ya filtrados por rango (ventas/pagos de un solo
+// corte). Vales/liquidaciones se cuentan por su fecha de pago (no por el
+// periodo que una liquidación diga cubrir): el corte muestra lo realmente
+// entregado en ese rango.
+function calcularMetricas(ventasEmp, pagosEmp) {
+  const diasTrabajados = new Set(ventasEmp.map((v) => diaCivilBogota(v.fecha))).size;
+  const comisionGanada = ventasEmp.reduce((suma, v) => suma + v.comision, 0);
+  // 100% para la empleada (ver Venta.propina): se suma al saldo igual que
+  // la comision. Con propina=0 en toda venta existente, no cambia nada.
+  const propinaGanada = ventasEmp.reduce((suma, v) => suma + v.propina, 0);
+
+  const vales = pagosEmp.filter((p) => p.tipo === 'vale').reduce((suma, p) => suma + p.monto, 0);
+  const liquidaciones = pagosEmp
+    .filter((p) => p.tipo === 'liquidacion')
+    .reduce((suma, p) => suma + p.monto, 0);
+
+  return {
+    diasTrabajados,
+    comisionGanada,
+    propinaGanada,
+    vales,
+    liquidaciones,
+    saldoPendiente: comisionGanada + propinaGanada - vales - liquidaciones,
+  };
+}
+
 // GET /nomina/resumen?mes=&anio=&sede_id= (Admin)
-// Una tarjeta por empleada: días trabajados, comisión ganada (de VENTAS),
-// vales y liquidaciones entregados en el mes, y saldo pendiente = ganado -
-// vales - liquidaciones. Vales/liquidaciones se cuentan por su fecha de
-// pago (no por el periodo que una liquidación diga cubrir): la tarjeta del
-// mes muestra lo realmente entregado ese mes.
+// Una tarjeta por empleada con dos cortes quincenales (1-15 y 16-fin de
+// mes). Cada corte trae sus propias métricas, calculadas solo con lo que
+// cae en su rango de fechas (ver calcularMetricas). "noIniciado" indica que
+// el corte todavía no arrancó (hoy en Bogota es anterior a su fecha de
+// inicio) para que el frontend lo distinga de un corte realmente liquidado
+// en $0.
 async function resumen(req, res) {
   const mes = Number(req.query.mes);
   const anio = Number(req.query.anio);
@@ -17,7 +46,8 @@ async function resumen(req, res) {
     return res.status(400).json({ error: 'Mes y anio son requeridos' });
   }
 
-  const { inicio, fin } = rangoMesBogota(mes, anio);
+  const { corte1, corte2 } = rangosQuincenaBogota(mes, anio);
+  const hoy = diaCivilBogota(new Date());
 
   const where = { rol: 'empleada' };
   if (req.query.sede_id) where.sede_id = Number(req.query.sede_id);
@@ -30,45 +60,49 @@ async function resumen(req, res) {
 
   const idsEmpleadas = empleadas.map((e) => e.id);
 
+  // corte1.fin === corte2.inicio (el instante exacto en que empieza el dia
+  // 16 en Bogota): un solo query para el mes completo y se separa en
+  // memoria comparando contra ese limite.
   const ventas = idsEmpleadas.length
     ? await prisma.venta.findMany({
-        where: { usuario_id: { in: idsEmpleadas }, anulada: false, fecha: { gte: inicio, lt: fin } },
+        where: { usuario_id: { in: idsEmpleadas }, anulada: false, fecha: { gte: corte1.inicio, lt: corte2.fin } },
         select: { usuario_id: true, fecha: true, comision: true, propina: true },
       })
     : [];
 
   const pagos = idsEmpleadas.length
     ? await prisma.pagoNomina.findMany({
-        where: { usuario_id: { in: idsEmpleadas }, fecha: { gte: inicio, lt: fin } },
-        select: { usuario_id: true, tipo: true, monto: true },
+        where: { usuario_id: { in: idsEmpleadas }, fecha: { gte: corte1.inicio, lt: corte2.fin } },
+        select: { usuario_id: true, tipo: true, monto: true, fecha: true },
       })
     : [];
 
   const resultado = empleadas.map((emp) => {
     const ventasEmp = ventas.filter((v) => v.usuario_id === emp.id);
-    const diasTrabajados = new Set(ventasEmp.map((v) => diaCivilBogota(v.fecha))).size;
-    const comisionGanada = ventasEmp.reduce((suma, v) => suma + v.comision, 0);
-    // 100% para la empleada (ver Venta.propina): se suma al saldo igual que
-    // la comision. Con propina=0 en toda venta existente, no cambia nada.
-    const propinaGanada = ventasEmp.reduce((suma, v) => suma + v.propina, 0);
-
     const pagosEmp = pagos.filter((p) => p.usuario_id === emp.id);
-    const vales = pagosEmp.filter((p) => p.tipo === 'vale').reduce((suma, p) => suma + p.monto, 0);
-    const liquidaciones = pagosEmp
-      .filter((p) => p.tipo === 'liquidacion')
-      .reduce((suma, p) => suma + p.monto, 0);
+
+    const ventasCorte1 = ventasEmp.filter((v) => v.fecha < corte1.fin);
+    const ventasCorte2 = ventasEmp.filter((v) => v.fecha >= corte1.fin);
+    const pagosCorte1 = pagosEmp.filter((p) => p.fecha < corte1.fin);
+    const pagosCorte2 = pagosEmp.filter((p) => p.fecha >= corte1.fin);
 
     return {
       usuario_id: emp.id,
       nombre: emp.nombre,
       sede_id: emp.sede_id,
       sede: emp.sede.nombre,
-      diasTrabajados,
-      comisionGanada,
-      propinaGanada,
-      vales,
-      liquidaciones,
-      saldoPendiente: comisionGanada + propinaGanada - vales - liquidaciones,
+      corte1: {
+        desde: corte1.desde,
+        hasta: corte1.hasta,
+        noIniciado: corte1.desde > hoy,
+        ...calcularMetricas(ventasCorte1, pagosCorte1),
+      },
+      corte2: {
+        desde: corte2.desde,
+        hasta: corte2.hasta,
+        noIniciado: corte2.desde > hoy,
+        ...calcularMetricas(ventasCorte2, pagosCorte2),
+      },
     };
   });
 

@@ -41,4 +41,25 @@ function rangoBogota(desde, hasta) {
   return { inicio, fin };
 }
 
-module.exports = { diaCivilBogota, rangoMesBogota, rangoBogota };
+// Los dos cortes quincenales de un mes calendario en Bogota: Corte 1 (dia 1
+// al 15) y Corte 2 (dia 16 al ultimo dia del mes). Cada corte trae "desde"/
+// "hasta" como fechas civiles "YYYY-MM-DD" (para mostrar y comparar contra
+// "hoy") ademas de "inicio"/"fin" como instantes UTC (para filtrar
+// VENTAS.fecha / PAGOS_NOMINA.fecha, igual que rangoBogota).
+function rangosQuincenaBogota(mes, anio) {
+  const pad = (n) => String(n).padStart(2, '0');
+  const mesStr = pad(mes);
+  const ultimoDia = new Date(Date.UTC(anio, mes, 0)).getUTCDate();
+
+  const desde1 = `${anio}-${mesStr}-01`;
+  const hasta1 = `${anio}-${mesStr}-15`;
+  const desde2 = `${anio}-${mesStr}-16`;
+  const hasta2 = `${anio}-${mesStr}-${pad(ultimoDia)}`;
+
+  return {
+    corte1: { desde: desde1, hasta: hasta1, ...rangoBogota(desde1, hasta1) },
+    corte2: { desde: desde2, hasta: hasta2, ...rangoBogota(desde2, hasta2) },
+  };
+}
+
+module.exports = { diaCivilBogota, rangoMesBogota, rangoBogota, rangosQuincenaBogota };
