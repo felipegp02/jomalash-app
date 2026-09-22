@@ -303,6 +303,15 @@ enum MetodoPagoNomina {
   transferencia
 }
 
+// A que quincena del mes en que se registra el pago (fecha) se resta este
+// vale/liquidacion. Explicito, elegido por quien registra el pago - no se
+// infiere de "fecha" (eso permite pagar hoy una deuda pendiente de la
+// quincena anterior DEL MISMO MES sin que quede mal contada).
+enum CorteNomina {
+  corte1
+  corte2
+}
+
 model PagoNomina {
   id                  Int               @id @default(autoincrement())
   usuario_id          Int
@@ -317,6 +326,10 @@ model PagoNomina {
   metodo_pago         MetodoPagoNomina?
   monto_efectivo      Int?
   monto_transferencia Int?
+  // A que quincena del mes de "fecha" se resta este pago (ver CorteNomina).
+  // Explicito, elegido en el formulario - reemplaza el criterio viejo de
+  // inferirlo de "fecha".
+  corte               CorteNomina
   // Solo tiene sentido para una liquidacion: que rango de trabajo cubre.
   // Un vale es un adelanto puntual, no cubre un periodo.
   periodo_inicio      DateTime?         @db.Date

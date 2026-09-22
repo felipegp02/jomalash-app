@@ -3,13 +3,12 @@ const { diaCivilBogota, rangosQuincenaBogota } = require('../utils/bogota');
 
 const TIPOS_PAGO = ['vale', 'liquidacion'];
 const METODOS_PAGO = ['efectivo', 'transferencia'];
+const CORTES = ['corte1', 'corte2'];
 
 // Días trabajados, comisión ganada (de VENTAS), vales y liquidaciones
 // entregados, y saldo pendiente = ganado - vales - liquidaciones, todo
-// acotado a los registros ya filtrados por rango (ventas/pagos de un solo
-// corte). Vales/liquidaciones se cuentan por su fecha de pago (no por el
-// periodo que una liquidación diga cubrir): el corte muestra lo realmente
-// entregado en ese rango.
+// acotado a los registros ya filtrados por rango (ventas de un corte, pagos
+// ya separados por su campo "corte" explícito - ver resumen()).
 function calcularMetricas(ventasEmp, pagosEmp) {
   const diasTrabajados = new Set(ventasEmp.map((v) => diaCivilBogota(v.fecha))).size;
   const comisionGanada = ventasEmp.reduce((suma, v) => suma + v.comision, 0);
@@ -61,8 +60,9 @@ async function resumen(req, res) {
   const idsEmpleadas = empleadas.map((e) => e.id);
 
   // corte1.fin === corte2.inicio (el instante exacto en que empieza el dia
-  // 16 en Bogota): un solo query para el mes completo y se separa en
-  // memoria comparando contra ese limite.
+  // 16 en Bogota): un solo query para el mes completo. Las ventas se separan
+  // por su fecha real (el trabajo ocurrio ese dia); los pagos se separan por
+  // su campo "corte" explicito, elegido al registrarlos - no por fecha.
   const ventas = idsEmpleadas.length
     ? await prisma.venta.findMany({
         where: { usuario_id: { in: idsEmpleadas }, anulada: false, fecha: { gte: corte1.inicio, lt: corte2.fin } },
@@ -73,7 +73,7 @@ async function resumen(req, res) {
   const pagos = idsEmpleadas.length
     ? await prisma.pagoNomina.findMany({
         where: { usuario_id: { in: idsEmpleadas }, fecha: { gte: corte1.inicio, lt: corte2.fin } },
-        select: { usuario_id: true, tipo: true, monto: true, fecha: true },
+        select: { usuario_id: true, tipo: true, monto: true, corte: true },
       })
     : [];
 
@@ -83,8 +83,8 @@ async function resumen(req, res) {
 
     const ventasCorte1 = ventasEmp.filter((v) => v.fecha < corte1.fin);
     const ventasCorte2 = ventasEmp.filter((v) => v.fecha >= corte1.fin);
-    const pagosCorte1 = pagosEmp.filter((p) => p.fecha < corte1.fin);
-    const pagosCorte2 = pagosEmp.filter((p) => p.fecha >= corte1.fin);
+    const pagosCorte1 = pagosEmp.filter((p) => p.corte === 'corte1');
+    const pagosCorte2 = pagosEmp.filter((p) => p.corte === 'corte2');
 
     return {
       usuario_id: emp.id,
@@ -119,6 +119,7 @@ async function crear(req, res) {
     sede_id,
     tipo,
     monto,
+    corte,
     metodo_pago,
     monto_efectivo,
     monto_transferencia,
@@ -127,11 +128,14 @@ async function crear(req, res) {
     nota,
   } = req.body || {};
 
-  if (!usuario_id || !sede_id || !tipo || !monto) {
-    return res.status(400).json({ error: 'Empleada, sede, tipo y monto son requeridos' });
+  if (!usuario_id || !sede_id || !tipo || !monto || !corte) {
+    return res.status(400).json({ error: 'Empleada, sede, tipo, monto y corte son requeridos' });
   }
   if (!TIPOS_PAGO.includes(tipo)) {
     return res.status(400).json({ error: 'El tipo debe ser vale o liquidacion' });
+  }
+  if (!CORTES.includes(corte)) {
+    return res.status(400).json({ error: 'El corte debe ser corte1 o corte2' });
   }
 
   const montoNum = Number(monto);
@@ -179,6 +183,7 @@ async function crear(req, res) {
     sede_id: sede.id,
     tipo,
     monto: montoNum,
+    corte,
     metodo_pago: metodoPagoFinal,
     monto_efectivo: montoEfectivoFinal,
     monto_transferencia: montoTransferenciaFinal,

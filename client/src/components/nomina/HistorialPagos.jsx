@@ -9,6 +9,7 @@ const campoInput =
 
 const ETIQUETA_TIPO = { vale: 'Vale', liquidacion: 'Liquidación' };
 const ETIQUETA_METODO = { efectivo: 'Efectivo', transferencia: 'Transferencia' };
+const ETIQUETA_CORTE = { corte1: 'Quincena 1', corte2: 'Quincena 2' };
 
 // Historial completo de la empleada (sin límite de fecha): trae todo una
 // sola vez al expandir, y el filtro de rango se aplica en el navegador
@@ -90,6 +91,8 @@ export default function HistorialPagos({ usuarioId, refrescarTrigger }) {
                         month: 'long',
                         year: 'numeric',
                       })}
+                      {' · '}
+                      {ETIQUETA_CORTE[p.corte]}
                       {p.periodo_inicio && p.periodo_fin && (
                         <>
                           {' · cubre '}

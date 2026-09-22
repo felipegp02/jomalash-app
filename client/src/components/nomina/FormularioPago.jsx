@@ -14,8 +14,21 @@ const METODOS_PAGO = [
   { valor: 'transferencia', etiqueta: 'Transferencia' },
 ];
 
+const CORTES = [
+  { valor: 'corte1', etiqueta: 'Quincena 1 (1-15)' },
+  { valor: 'corte2', etiqueta: 'Quincena 2 (16-fin de mes)' },
+];
+
+// Quincena del mes en curso que contiene hoy, para preseleccionarla. Se
+// puede cambiar a mano para pagar la deuda pendiente de la otra quincena
+// de este mismo mes.
+function corteDeHoy() {
+  return new Date().getDate() <= 15 ? 'corte1' : 'corte2';
+}
+
 export default function FormularioPago({ usuarioId, sedeId, onGuardado, onCancelar }) {
   const [tipo, setTipo] = useState('vale');
+  const [corte, setCorte] = useState(corteDeHoy);
   const [monto, setMonto] = useState('');
   const [metodoPago, setMetodoPago] = useState('efectivo');
   const [dividirPago, setDividirPago] = useState(false);
@@ -41,6 +54,7 @@ export default function FormularioPago({ usuarioId, sedeId, onGuardado, onCancel
       usuario_id: usuarioId,
       sede_id: sedeId,
       tipo,
+      corte,
       monto: montoNum,
       periodo_inicio: tipo === 'liquidacion' && periodoInicio ? periodoInicio : undefined,
       periodo_fin: tipo === 'liquidacion' && periodoFin ? periodoFin : undefined,
@@ -88,6 +102,26 @@ export default function FormularioPago({ usuarioId, sedeId, onGuardado, onCancel
             {t.etiqueta}
           </button>
         ))}
+      </div>
+
+      <div className="flex flex-col gap-1">
+        <label className="text-xs font-medium text-texto-secundario">A qué quincena se resta</label>
+        <div className="grid grid-cols-2 gap-2">
+          {CORTES.map((c) => (
+            <button
+              key={c.valor}
+              type="button"
+              onClick={() => setCorte(c.valor)}
+              className={`rounded-xl border px-2 py-2 text-sm font-medium transition-colors ${
+                corte === c.valor
+                  ? 'border-dorado bg-dorado-fondo text-texto'
+                  : 'border-borde-tarjeta bg-white text-texto-secundario hover:text-texto'
+              }`}
+            >
+              {c.etiqueta}
+            </button>
+          ))}
+        </div>
       </div>
 
       <input
