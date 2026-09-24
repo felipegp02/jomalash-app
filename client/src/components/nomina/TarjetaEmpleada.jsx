@@ -28,6 +28,25 @@ function EstadoCorte({ corte }) {
     );
   }
 
+  // Sin comision, propina, vales ni liquidaciones: no hubo ningun movimiento
+  // real en este corte (aunque ya haya arrancado), asi que no corresponde
+  // decir "Liquidado" (da a entender que se pago algo que nunca existio). Un
+  // vale/liquidacion sin comision (anticipo) SI cuenta como movimiento y cae
+  // en Pendiente/Liquidado segun corresponda, no aca.
+  const sinMovimiento =
+    corte.comisionGanada === 0 &&
+    corte.propinaGanada === 0 &&
+    corte.vales === 0 &&
+    corte.liquidaciones === 0;
+
+  if (sinMovimiento) {
+    return (
+      <div className="mt-3 flex items-center justify-between rounded-xl bg-crema px-3 py-2">
+        <span className="text-sm font-medium text-texto-secundario">Sin actividad</span>
+      </div>
+    );
+  }
+
   if (corte.saldoPendiente <= 0) {
     return (
       <div className="mt-3 flex items-center justify-between rounded-xl bg-verde/10 px-3 py-2">
