@@ -1,10 +1,18 @@
 generator client {
-  provider   = "prisma-client-js"
-  // "binary" en vez del default "library": el engine "library" (.node nativo
-  // en proceso) tiene un bug conocido de Prisma (PANIC: timer has gone away)
-  // en hosting compartido tipo cPanel/Hostinger. El engine "binary" corre
-  // como proceso aparte y evita ese panic.
-  engineType = "binary"
+  provider = "prisma-client-js"
+  // PLAN B DE EMERGENCIA (rama plan-b-engine-library): volvimos al "library"
+  // por defecto porque en la infraestructura nueva de Hostinger Web Apps
+  // (path de deploy cambio a .../hbuilds/versions/<uuid>/nodejs/...) el
+  // login quedo roto con el engine "binary": ECONNREFUSED persistente en el
+  // mismo puerto, con el binario sano (permisos y ELF correctos), compatible
+  // con que ese entorno no deje lanzar el engine como subproceso aparte.
+  // "library" corre el engine dentro del mismo proceso Node (sin spawn), asi
+  // que evita ese problema por diseño. Ojo: el motivo original para usar
+  // "binary" (ver historial de este archivo) fue un PANIC "timer has gone
+  // away" del engine "library" en hosting compartido tipo cPanel/Hostinger -
+  // si ese bug reaparece en el entorno nuevo, esto no es una solucion final,
+  // solo la via mas rapida para destrabar el login mientras se sigue
+  // diagnosticando por que "binary" no puede arrancar.
 }
 
 datasource db {
