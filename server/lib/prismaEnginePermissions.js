@@ -1,5 +1,6 @@
 const fs = require('fs');
 const path = require('path');
+const { execFile } = require('child_process');
 
 // Carpetas donde "prisma generate" deja los binarios del engine (engineType
 // = "binary" en schema.prisma). En un host tipo "Web Apps" (build y runtime
@@ -77,4 +78,53 @@ function asegurarPermisos({ log = console.log } = {}) {
   });
 }
 
-module.exports = { listarBinariosEngine, inspeccionar, asegurarPermisos };
+const TIMEOUT_PRUEBA_MS = 5000;
+
+// Los archivos ".dll.node"/".so.node" son el addon nativo que carga la
+// variante "library" (dlopen dentro del proceso, no un programa aparte):
+// correrlos con execFile no tiene sentido. Los "query-engine-*"/
+// "schema-engine-*" sin esa extension si son ejecutables standalone.
+function pareceEjecutablePrograma(archivo) {
+  const base = path.basename(archivo).toLowerCase();
+  if (base.includes('.node') || base.endsWith('.so')) return false;
+  return /^(query|schema)-engine-/.test(base);
+}
+
+// Corre el binario con --version para ver si el subproceso llega a
+// ejecutarse. Distingue tres familias de falla:
+// - spawn nunca arranca (err.code tipo 'EACCES'/'EPERM'/'ENOENT'): permisos
+//   del sistema o sandboxing que bloquea lanzar subprocesos.
+// - arranca pero termina con codigo != 0 y stderr tipo "error while loading
+//   shared libraries: libssl...": falta una lib del sistema (mismatch de
+//   binaryTarget, ej. openssl 1.1 vs 3.0, o glibc vs musl).
+// - se cuelga y hay que matarlo por timeout (err.killed): el proceso arranca
+//   pero nunca vuelve, compatible con un sandbox que lo deja arrancar pero
+//   le corta la salida/red de forma que nunca resuelve.
+function probarEjecucion(archivo) {
+  return new Promise((resolve) => {
+    execFile(archivo, ['--version'], { timeout: TIMEOUT_PRUEBA_MS, windowsHide: true }, (err, stdout, stderr) => {
+      if (!err) {
+        resolve({ archivo, ejecuto: true, stdout: stdout.trim(), stderr: stderr.trim() });
+        return;
+      }
+      resolve({
+        archivo,
+        ejecuto: false,
+        codigo: err.code ?? null,
+        señal: err.signal || null,
+        matoPorTimeout: Boolean(err.killed && err.signal),
+        stdout: (stdout || '').toString().trim(),
+        stderr: (stderr || '').toString().trim(),
+        mensaje: err.message,
+      });
+    });
+  });
+}
+
+module.exports = {
+  listarBinariosEngine,
+  inspeccionar,
+  asegurarPermisos,
+  pareceEjecutablePrograma,
+  probarEjecucion,
+};

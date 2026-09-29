@@ -56,23 +56,38 @@ app.get('/health', (req, res) => res.json({ status: 'ok' }));
 // DIAGNOSTICO TEMPORAL: para confirmar sin SSH si el engine binary de
 // Prisma tiene el bit +x, si el archivo es un ELF valido (no una pagina de
 // error guardada con el nombre del binario, ni un archivo truncado), y si
-// el runtime tiene memoria/libc compatibles. No aplica ningun cambio (el
+// el runtime tiene memoria/libc compatibles. Ademas ejecuta el binario con
+// "--version" (execFile) para ver si el subproceso realmente llega a
+// correr: distingue permisos/sandboxing (spawn EACCES/EPERM), librerias
+// faltantes (stderr "error while loading shared libraries...") y timeouts
+// (proceso que arranca pero nunca vuelve). No aplica ningun cambio (el
 // chmod ya corrio como self-heal al arrancar, arriba). Sacar esta ruta
 // despues de usarla.
-app.get('/diagnostico/prisma-engine', (req, res) => {
+app.get('/diagnostico/prisma-engine', async (req, res) => {
   try {
-    const { listarBinariosEngine, inspeccionar } = require('./lib/prismaEnginePermissions');
-    const binariosAhora = listarBinariosEngine().map((archivo) => {
+    const {
+      listarBinariosEngine,
+      inspeccionar,
+      pareceEjecutablePrograma,
+      probarEjecucion,
+    } = require('./lib/prismaEnginePermissions');
+
+    const rutas = listarBinariosEngine();
+    const binariosAhora = rutas.map((archivo) => {
       try {
         return inspeccionar(archivo);
       } catch (err) {
         return { archivo, error: err.message };
       }
     });
+    const pruebasEjecucion = await Promise.all(
+      rutas.filter(pareceEjecutablePrograma).map(probarEjecucion)
+    );
 
     res.json({
       selfHealAlArrancar: resultadoSelfHealPrismaEngine,
       binariosAhora,
+      pruebasEjecucion,
       sistema: {
         platform: process.platform,
         arch: process.arch,
